@@ -137,9 +137,10 @@ def lr_disp_consistency_loss(disp1: torch.Tensor, disp2: torch.Tensor, left_to_r
 def disp_to_grid(disp: torch.Tensor, left_to_right: bool):
     batch_size, height, width = disp.shape
 
-    disp_direction_multiplier = 1  # should be 1 if changing views moves pixels right, else -1 b/c changing views moves pixels left
+    # TODO: I just changed this, is it correct?
+    disp_direction_multiplier = -1  # should be 1 if changing views moves pixels right, else -1 b/c changing views moves pixels left
     if left_to_right:
-        disp_direction_multiplier = -1
+        disp_direction_multiplier = 1
 
     # disp maps only provide horizontal disparities since images are rectified, but
     # F.grid_sample expects x and y disparities, so we need to add an axis to the disp maps

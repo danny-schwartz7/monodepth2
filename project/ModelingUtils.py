@@ -52,7 +52,7 @@ def train(train_loader: torch.utils.data.DataLoader,
 
     optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.999)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.95)
 
     train_tbx_idx = 0
     for epoch in tqdm(range(num_epochs)):
