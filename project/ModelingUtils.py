@@ -199,7 +199,6 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
 
                 running_mse += calculate_quantitative_results_RMS(predicted_depth, individual_tup) ** 2
                 running_silog += calculate_quantitaive_results_SILog(predicted_depth, individual_tup)
-
             total_test_examples += examples_in_batch
     # print(f"Average test loss was {test_loss/total_test_examples}")
     print(f"Average model MSE was {running_mse / total_test_examples}")
