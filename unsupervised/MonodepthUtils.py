@@ -44,7 +44,8 @@ def unsupervised_monodepth_loss(
         reconstruction_weight: float = 1.0,
         alpha_reconstruction: float = 0.85,
         disp_smoothness_weight: float = 0.1,
-        lr_disp_consistency_weight: float = 1.0):
+        lr_disp_consistency_weight: float = 1.0,
+        return_individual_losses: bool = False):
     """
     Loss function from https://arxiv.org/pdf/1609.03677.pdf
     :param stereo_pair: a tuple of the original left and right images as tensors
@@ -76,6 +77,9 @@ def unsupervised_monodepth_loss(
     loss += lr_disp_consistency_weight * lr_disp_consistency_term
 
     # TODO: experiment with adding a supervised loss term as well
+    if return_individual_losses:
+        # return a tuple of losses: reconstruction, disp_smoothness, lr_consistency. They can be added to get the full loss.
+        return reconstruction_weight * reconstruction_term, disp_smoothness_weight * disp_smoothness_term, lr_disp_consistency_weight * lr_disp_consistency_term
     return loss
 
 
