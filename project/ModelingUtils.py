@@ -5,13 +5,13 @@ from tensorboardX import SummaryWriter
 from matplotlib import pyplot as plt
 from typing import Optional, Tuple
 
-from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupervised_monodepth_loss
+from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupervised_monodepth_loss, unsupervised_multiscale_monodepth_loss
 
 TRAIN_REPORT_INTERVAL = 50
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-def unsupervised_loss(tup, model: nn.Module, return_individual_losses: bool = False):
+def unsupervised_single_scale_loss(tup, model: nn.Module, return_individual_losses: bool = False):
     """
 
     :param tup: A tuple from the dataloader
@@ -29,6 +29,25 @@ def unsupervised_loss(tup, model: nn.Module, return_individual_losses: bool = Fa
     reconstructions = reconstruct_input_from_disp_maps(stereo_pair, disp_maps)
 
     return unsupervised_monodepth_loss(stereo_pair, disp_maps, reconstructions, return_individual_losses=return_individual_losses)
+
+
+def unsupervised_multi_scale_loss(tup, model: nn.Module, return_individual_losses: bool = False):
+    """
+
+    :param tup: A tuple from the dataloader
+    :return: loss
+    """
+
+    left_img, right_img, _, _ = tup
+
+    left_img = left_img.to(DEVICE)
+    right_img = right_img.to(DEVICE)
+
+    stereo_pair = (left_img, right_img)
+    disp_maps = model.forward(left_img)
+
+    return unsupervised_multiscale_monodepth_loss(stereo_pair, disp_maps, return_individual_losses=return_individual_losses)
+
 
 
 def train(train_loader: torch.utils.data.DataLoader,
@@ -70,13 +89,12 @@ def train(train_loader: torch.utils.data.DataLoader,
             examples_in_batch = tup[0].shape[0]
 
             optimizer.zero_grad()
-            recon_loss, disp_smooth_loss, lr_consistency_loss = unsupervised_loss(tup, model, True)
-            loss = recon_loss + disp_smooth_loss + lr_consistency_loss
-            running_loss += examples_in_batch * loss.item()
+            recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+            running_loss += examples_in_batch * total_loss.item()
             running_recon_loss += recon_loss.item()
             running_disp_smooth_loss += disp_smooth_loss.item()
             running_lr_consistency_loss += lr_consistency_loss.item()
-            loss.backward()
+            total_loss.backward()
             optimizer.step()
 
             num_train_examples += examples_in_batch
@@ -110,9 +128,8 @@ def train(train_loader: torch.utils.data.DataLoader,
             with torch.no_grad():
                 examples_in_batch = tup[0].shape[0]
 
-                recon_loss, disp_smooth_loss, lr_consistency_loss = unsupervised_loss(tup, model, True)
-                loss = recon_loss + disp_smooth_loss + lr_consistency_loss
-                val_loss += examples_in_batch * loss.item()
+                recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+                val_loss += examples_in_batch * total_loss.item()
 
                 val_recon_loss += recon_loss.item()
                 val_disp_smooth_loss += disp_smooth_loss.item()
@@ -162,7 +179,7 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
     for tup in tqdm(test_loader):
         with torch.no_grad():
             examples_in_batch = tup[0].shape[0]
-            test_loss += examples_in_batch * unsupervised_loss(tup, model).item()
+            test_loss += examples_in_batch * unsupervised_multi_scale_loss(tup, model).item()
             total_test_examples += examples_in_batch
     print(f"Average test loss was {test_loss/total_test_examples}")
     # TODO: add a function to compare this to ground-truth depth using methods to convert from disparity to depth
@@ -186,7 +203,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     right_image = right_image.to(DEVICE)
 
     with torch.no_grad():
-        left_to_right_disp, right_to_left_disp = model.forward(left_image)
+        left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
 
         recons = reconstruct_input_from_disp_maps((left_image, right_image), (left_to_right_disp, right_to_left_disp))
 
