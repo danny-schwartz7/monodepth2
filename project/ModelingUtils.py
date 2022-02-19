@@ -3,6 +3,7 @@ from torch import nn
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from matplotlib import pyplot as plt
+from typing import Optional, Tuple
 
 from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupervised_monodepth_loss
 
@@ -10,7 +11,7 @@ TRAIN_REPORT_INTERVAL = 50
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-def unsupervised_loss(tup, model: nn.Module):
+def unsupervised_loss(tup, model: nn.Module, return_individual_losses: bool = False):
     """
 
     :param tup: A tuple from the dataloader
@@ -27,9 +28,7 @@ def unsupervised_loss(tup, model: nn.Module):
 
     reconstructions = reconstruct_input_from_disp_maps(stereo_pair, disp_maps)
 
-    loss = unsupervised_monodepth_loss(stereo_pair, disp_maps, reconstructions)
-
-    return loss
+    return unsupervised_monodepth_loss(stereo_pair, disp_maps, reconstructions, return_individual_losses=return_individual_losses)
 
 
 def train(train_loader: torch.utils.data.DataLoader,
@@ -39,7 +38,9 @@ def train(train_loader: torch.utils.data.DataLoader,
             tbx_log_dir: str,
             initial_lr: float = 1e-4,
             num_epochs: int = 2,
-            supervised: bool = False):
+            supervised: bool = False,
+            train_viz_tup: Optional[Tuple] = None,
+            val_viz_tup: Optional[Tuple] = None):
 
     if supervised:
         raise NotImplementedError("Implement this later!")
@@ -60,12 +61,21 @@ def train(train_loader: torch.utils.data.DataLoader,
 
         num_train_examples = 0
         running_loss = 0
+        running_recon_loss = 0
+        running_disp_smooth_loss = 0
+        running_lr_consistency_loss = 0
+
+        model.train()
         for tup in tqdm(train_loader, desc=f"Training - Epoch {epoch}", leave=False):
             examples_in_batch = tup[0].shape[0]
 
             optimizer.zero_grad()
-            loss = unsupervised_loss(tup, model)
+            recon_loss, disp_smooth_loss, lr_consistency_loss = unsupervised_loss(tup, model, True)
+            loss = recon_loss + disp_smooth_loss + lr_consistency_loss
             running_loss += examples_in_batch * loss.item()
+            running_recon_loss += recon_loss.item()
+            running_disp_smooth_loss += disp_smooth_loss.item()
+            running_lr_consistency_loss += lr_consistency_loss.item()
             loss.backward()
             optimizer.step()
 
@@ -75,24 +85,68 @@ def train(train_loader: torch.utils.data.DataLoader,
                 running_loss /= num_train_examples
                 tbx_writer.add_scalar("train/loss", running_loss, train_tbx_idx)
 
+                running_recon_loss /= num_train_examples
+                tbx_writer.add_scalar("train/reconstruction_loss", running_recon_loss, train_tbx_idx)
+
+                running_disp_smooth_loss /= num_train_examples
+                tbx_writer.add_scalar("train/disparity_smoothness_loss", running_disp_smooth_loss, train_tbx_idx)
+
+                running_lr_consistency_loss /= num_train_examples
+                tbx_writer.add_scalar("train/lr_consistency_loss", running_lr_consistency_loss, train_tbx_idx)
+
                 running_loss = 0
+                running_recon_loss = 0
+                running_disp_smooth_loss = 0
+                running_lr_consistency_loss = 0
                 num_train_examples = 0
 
         val_loss = 0
+        val_recon_loss = 0
+        val_disp_smooth_loss = 0
+        val_lr_consistency_loss = 0
         total_val_examples = 0
         for tup in tqdm(val_loader, desc=f"Validation - Epoch {epoch}", leave=False):
+            model.eval()
             with torch.no_grad():
                 examples_in_batch = tup[0].shape[0]
-                val_loss += examples_in_batch * unsupervised_loss(tup, model).item()
+
+                recon_loss, disp_smooth_loss, lr_consistency_loss = unsupervised_loss(tup, model, True)
+                loss = recon_loss + disp_smooth_loss + lr_consistency_loss
+                val_loss += examples_in_batch * loss.item()
+
+                val_recon_loss += recon_loss.item()
+                val_disp_smooth_loss += disp_smooth_loss.item()
+                val_lr_consistency_loss += lr_consistency_loss.item()
+
                 total_val_examples += examples_in_batch
         val_loss /= total_val_examples
-
         tbx_writer.add_scalar("val/loss", val_loss, epoch)
+
+        val_recon_loss /= total_val_examples
+        tbx_writer.add_scalar("val/reconstruction_loss", val_recon_loss, epoch)
+
+        val_disp_smooth_loss /= total_val_examples
+        tbx_writer.add_scalar("val/disparity_smoothness_loss", val_disp_smooth_loss, epoch)
+
+        val_lr_consistency_loss /= total_val_examples
+        tbx_writer.add_scalar("val/lr_consistency_loss", val_lr_consistency_loss, epoch)
 
         torch.save(model, f"{model_savedir}/last.pt")
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(model, f"{model_savedir}/best.pt")
+
+        # visualize examples
+        if train_viz_tup is not None:
+            with torch.no_grad():
+                fig = data_tuple_to_plt_image(train_viz_tup, model)
+            tbx_writer.add_figure("train/visualization", fig, epoch)
+            plt.close(fig)
+        if val_viz_tup is not None:
+            with torch.no_grad():
+                fig = data_tuple_to_plt_image(val_viz_tup, model)
+            tbx_writer.add_figure("val/visualization", fig, epoch)
+            plt.close(fig)
 
         lr_scheduler.step()
 
@@ -116,7 +170,6 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
 # TODO: add a function that can display generated disp maps for images next to GT depth maps and the original images
 def visualize_disparity_maps(data_loader: torch.utils.data.DataLoader, model: nn.Module, savepath: str):
     model.to(DEVICE)
-    model.eval()
 
     for tup in data_loader:
         data_tuple_to_plt_image(tup, model)
@@ -125,6 +178,9 @@ def visualize_disparity_maps(data_loader: torch.utils.data.DataLoader, model: nn
 
 
 def data_tuple_to_plt_image(tup, model: nn.Module):
+    model.eval()
+
+    tup = convert_tuple_to_batched_if_necessary(tup)
     left_image, right_image, left_depth_gt, right_depth_gt = tup
     left_image = left_image.to(DEVICE)
     right_image = right_image.to(DEVICE)
@@ -164,4 +220,15 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.axis('off')
     plt.title("Predicted Disparity Map")
 
-    return
+    return fig
+
+
+def convert_tuple_to_batched_if_necessary(tup):
+    left_image, right_image, left_depth_gt, right_depth_gt = tup
+    if len(left_image.shape) == 4:
+        return tup
+    left_image = left_image.unsqueeze(dim=0)
+    right_image = right_image.unsqueeze(dim=0)
+    left_depth_gt = left_depth_gt.unsqueeze(dim=0)
+    right_depth_gt = right_depth_gt.unsqueeze(dim=0)
+    return (left_image, right_image, left_depth_gt, right_depth_gt)

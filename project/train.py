@@ -31,11 +31,16 @@ def main():
     make_dir_if_not_exists(args.tbx_log_dir)
 
     model = EncDecNet()
-    train_loader = DataLoader(dataset=MyDataset("train"), batch_size=args.batch_size)
-    val_loader = DataLoader(dataset=MyDataset("eval"), batch_size=args.batch_size)
+
+    train_dataset = MyDataset("train")
+    val_dataset = MyDataset("eval")
+
+    train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(dataset=val_dataset, batch_size=args.batch_size, shuffle=True)
     train(train_loader, val_loader, model,
           args.model_save_dir, args.tbx_log_dir,
-          args.initial_lr, args.num_epochs)
+          args.initial_lr, args.num_epochs, train_viz_tup=train_dataset[0],
+          val_viz_tup=val_dataset[0])
 
 
 if __name__ == "__main__":
