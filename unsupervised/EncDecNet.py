@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from typing import Tuple
 from collections import deque
 
-from unsupervised.Blocks import ConvElu, UpConvElu, Reshaper
+from unsupervised.Blocks import ConvElu, UpConvElu, Reshaper, ResConv
 
 MAX_DISP_FRAC = 0.3  # from the paper
 
@@ -49,6 +49,9 @@ class EncDecNet(nn.Module):
             skip = skip_tensor_deque.pop()
             x = module(x + skip)
 
+        for module in self.smoothing_blocks:
+            x = module(x)
+
         # TODO: can modify this to obtain multiple scales of depth
         disp_maps = MAX_DISP_FRAC * F.sigmoid(x)
 
@@ -68,14 +71,6 @@ class EncDecNet(nn.Module):
             ConvElu(16, 32, (3, 7), (2, 2)),
             ConvElu(32, 4, (3, 7), (1, 1))
         ])
-        self.skip_up_blocks = nn.ModuleList([
-            UpConvElu(4, 32, (3, 7), 1, 0, 0),
-            UpConvElu(32, 16, (3, 7), 2, 0, 0),
-            UpConvElu(16, 8, (3, 7), (2, 3), 0, 1),
-            UpConvElu(8, 4, 5, 2, 0, (0, 1)),
-            UpConvElu(4, 4, 5, 2, 0, (1, 0)),
-            UpConvElu(4, 2, 5, 2, 0, (0, 1), activation=False)
-        ])
         self.internal_blocks = nn.ModuleList([
             nn.Flatten(),
             nn.Linear(512, 128),
@@ -88,6 +83,21 @@ class EncDecNet(nn.Module):
             Reshaper((1, 8, 16)),
             UpConvElu(1, 4, 1, 1, 0, 0)
         ])
+        self.skip_up_blocks = nn.ModuleList([
+            UpConvElu(4, 32, (3, 7), 1, 0, 0),
+            UpConvElu(32, 16, (3, 7), 2, 0, 0),
+            UpConvElu(16, 8, (3, 7), (2, 3), 0, 1),
+            UpConvElu(8, 4, 5, 2, 0, (0, 1)),
+            UpConvElu(4, 4, 5, 2, 0, (1, 0)),
 
+            # non-smoothed output:
+            # UpConvElu(4, 2, 5, 2, 0, (0, 1), activation=False)
 
+            # smoothed output:
+            UpConvElu(4, 4, 5, 2, 0, (0, 1))
+        ])
+        self.smoothing_blocks = nn.ModuleList([
+            ResConv(4, 7, 2),
+            nn.Conv2d(4, 2, 7, padding="same")
+        ])
 
