@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from typing import Tuple
+from typing import Tuple, List
 from collections import deque
 
 from unsupervised.Blocks import ConvElu, UpConvElu, Reshaper, ResConv
@@ -20,7 +20,7 @@ class EncDecNet(nn.Module):
         # start with 3 x 375 x 1242
         # first, get down to a reasonable resolution
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> List[Tuple[torch.Tensor, torch.Tensor]]:
         """
         TODO: in the unsupervised monocular depth paper, they output disp at 4 different scales. Should we do this?
 
@@ -45,20 +45,32 @@ class EncDecNet(nn.Module):
         for module in self.internal_blocks:
             x = module(x)
 
-        for module in self.skip_up_blocks:
+        disp_pairs_at_scales = []
+
+        for i, module in enumerate(self.skip_up_blocks):
             skip = skip_tensor_deque.pop()
-            x = module(x + skip)
+            if i > 2 and i < (len(self.skip_up_blocks) - 1):
+                x = module.upconv(x + skip)
+                disp_part = x[:, :2, :, :]
+                disp_part = MAX_DISP_FRAC * F.sigmoid(disp_part)
+                left_to_right_disp = disp_part[:, 0, :, :]
+                right_to_left_disp = disp_part[:, 1, :, :]
+                disp_pairs_at_scales.append((left_to_right_disp, right_to_left_disp))
+                x = module.elu(x)
+            else:
+                x = module(x + skip)
 
         for module in self.smoothing_blocks:
             x = module(x)
 
-        # TODO: can modify this to obtain multiple scales of depth
         disp_maps = MAX_DISP_FRAC * F.sigmoid(x)
 
         left_to_right_disp = disp_maps[:, 0, :, :]
         right_to_left_disp = disp_maps[:, 1, :, :]
 
-        return left_to_right_disp, right_to_left_disp
+        disp_pairs_at_scales.append((left_to_right_disp, right_to_left_disp))
+        # The largest scale is the last element of this list
+        return disp_pairs_at_scales
 
     def _init_model(self):
         self.skip_down_blocks = nn.ModuleList([

@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 import torch
-from typing import Tuple
+from typing import Tuple, List
 
 # the library we use for SSIM is called 'kornia' and it requires a fairly recent torch version,
 # hopefully that doesn't break the dataloader components in this repo.
@@ -81,6 +81,55 @@ def unsupervised_monodepth_loss(
         # return a tuple of losses: reconstruction, disp_smoothness, lr_consistency. They can be added to get the full loss.
         return reconstruction_weight * reconstruction_term, disp_smoothness_weight * disp_smoothness_term, lr_disp_consistency_weight * lr_disp_consistency_term
     return loss
+
+
+def unsupervised_multiscale_monodepth_loss(
+        stereo_pair: Tuple[torch.Tensor, torch.Tensor],
+        predicted_disparities: List[Tuple[torch.Tensor, torch.Tensor]],
+        return_individual_losses: bool = False):
+    """
+
+    :param stereo_pair:
+    :param predicted_disparities:
+    :param return_individual_losses: only returns individual losses for max scale, followed by TOTAL COMBINED LOSS
+    :return:
+    """
+
+    total_loss = 0
+
+    left_image, right_image = stereo_pair
+
+    for i, disparity_pair in enumerate(predicted_disparities[:-1]):
+        left_to_right_disp, right_to_left_disp = disparity_pair
+        target_shape = (left_to_right_disp.shape[1], left_to_right_disp.shape[2])
+
+        resized_left_image = F.interpolate(left_image, size=target_shape, mode='bilinear')
+        resized_right_image = F.interpolate(left_image, size=target_shape, mode='bilinear')
+
+        recons = reconstruct_input_from_disp_maps((resized_left_image, resized_right_image), disparity_pair)
+        total_loss += unsupervised_monodepth_loss(
+            (resized_left_image, resized_right_image),
+            disparity_pair,
+            recons,
+            disp_smoothness_weight=0.1/(2 ** (3-i)),
+            return_individual_losses=False
+        )
+
+    # now compute loss for the largest scale
+    disp_maps = predicted_disparities[-1]
+    recons = reconstruct_input_from_disp_maps(stereo_pair, disp_maps)
+
+    recon_loss, disp_smooth_loss, lr_consistency_loss = unsupervised_monodepth_loss(
+        stereo_pair,
+        disp_maps,
+        recons,
+        return_individual_losses=True
+    )
+    total_loss += recon_loss + disp_smooth_loss + lr_consistency_loss
+    if return_individual_losses:
+        return recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss
+    else:
+        return total_loss
 
 
 def reconstruction_loss(img1: torch.Tensor, img2: torch.Tensor, alpha: float):
