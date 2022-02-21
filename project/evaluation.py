@@ -77,7 +77,6 @@ def calculate_quantitaive_results_SILog(calculated_disparity_map: torch.Tensor, 
     gt_depth_flat = gt_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
 
     di = np.log(calc_depth_flat + epsilon) - np.log(gt_depth_flat + epsilon)
-
     diSquared = di ** 2
     firstTerm = np.mean(diSquared)
     secondTerm = (np.mean(di)) ** 2
