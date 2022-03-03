@@ -75,10 +75,11 @@ def main():
         val_loader = DataLoader(dataset=eval_dataset, batch_size=args.batch_size)
         test_loader = DataLoader(dataset=MyDataset("test"), batch_size=args.batch_size)
 
+        #Save file
         for filename, loader in [("train", training_dataset), ("val", eval_dataset)]:
             for tup in loader:
                 fig = data_tuple_to_plt_image(tup)
-                plt.savefig(f"/home/schwartzd/{filename}.png")
+                #plt.savefig(f"/home/schwartzd/{filename}.png") #Edit depending on which directory you want
                 plt.close(fig)
                 break
 
