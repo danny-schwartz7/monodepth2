@@ -1,5 +1,7 @@
 import torch
 from torchvision import transforms
+
+from torch.nn import functional as F
 from typing import Tuple
 from PIL import Image
 import os
@@ -226,14 +228,15 @@ class MyDataset(torch.utils.data.Dataset):
         #convert to tensor
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
+        depth_convert = 
 
         print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
         if depth_gtL.size() != (375, 1242):
-            depth_gtL = resizeT(depth_gtL)
+            depth_gtL = F.interpolate(depth_gtL, (375, 1242))
             print("new L depth Size:", depth_gtL.size())
 
         if depth_gtR.size() != (375, 1242):
-            depth_gtR = resizeT(depth_gtR)
+            depth_gtR = F.interpolate(depth_gtR, (375, 1242))
             print("new RSize:", depth_gtR.size())
             raise
 
