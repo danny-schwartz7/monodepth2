@@ -191,7 +191,7 @@ class MyDataset(torch.utils.data.Dataset):
         #get images
         imgL : Image = Image.open(L_imgPath)
         imgR : Image = Image.open(R_imgPath)
-        print(f"on index: {i} has shape: {imgL.shape} and {imgR.shape}")
+        print(f"on index: {index} has shape: {imgL.shape} and {imgR.shape}")
         assert imgL.shape == (3, 375, 1242)
         #conversion
         convert_tensor = transforms.ToTensor()
