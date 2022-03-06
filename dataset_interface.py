@@ -6,6 +6,8 @@ import os
 import numpy as np
 from kitti_utils import generate_depth_map
 
+import matplotlib as plt
+
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
     depth = (baseline * focalLength)/disparity
     return depth
@@ -146,8 +148,10 @@ class MyDataset(torch.utils.data.Dataset):
                 if imgL.size() != (3, 375, 1242):
                     print(f"{L_imgPath} has shape: {imgL.size()} and {imgR.size()}")
                     resizeT = transforms.Resize((375, 1242))
-                    imgL = resizeT(imgL)
-                    print(f"{L_imgPath} now has shape: {imgL.size()}")
+                    newimgL = resizeT(imgL)
+                    print(f"{L_imgPath} now has shape: {newimgL.size()}")
+                    plt.imshow(imgL.numpy())
+                    plt.imshow(newimgL.numpy())
                     raise
                     break
 
