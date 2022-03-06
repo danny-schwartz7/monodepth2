@@ -124,6 +124,22 @@ class MyDataset(torch.utils.data.Dataset):
             RImages = sorted([f.path for f in os.scandir(os.path.join(driveFolder, RcamPath))])
             #find velodyne images
             veloDatas = sorted([f.path for f in os.scandir(os.path.join(driveFolder, veloPath))])
+
+            #check image sizes
+            #get images
+            for L_imgPath, R_imgPath in zip(LImages, RImages):
+                imgL : Image = Image.open(L_imgPath)
+                imgR : Image = Image.open(R_imgPath)
+                
+                #conversion
+                convert_tensor = transforms.ToTensor()
+                imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
+                imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
+
+                if imgL.size() != (3, 375, 1242):
+                    print(f"{L_imgPath} has shape: {imgL.size()} and {imgR.size()}")
+                
+
             #make tuples with coresponding images
             if not(len(LImages) == len(RImages) and len(LImages) == len(veloDatas)):
                 #print("unequal lengths in data fixing errors")
