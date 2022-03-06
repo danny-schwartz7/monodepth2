@@ -20,8 +20,8 @@ def main():
     loader = get_dataloader(type, batch_size, shuffle)
     i = 0
     for tup in loader:
-        print(tup.focalLength)
-        print(tup.imgR)
+        #print(tup.focalLength)
+        #print(tup.imgR)
         i+=1
         print(f"I have completed {i} iterations out of {len(loader)}")
     
