@@ -222,11 +222,11 @@ class MyDataset(torch.utils.data.Dataset):
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
         depth_gtR = generate_depth_map(calibDir, velo_filename=veloPath, cam = 3)
-        print("depth size: ", depth_gtL.shape())
+        
         #convert to tensor
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
-               
+        print("depth size: ", depth_gtL.size())
         #data_tuple : Data_Tuple = Data_Tuple(imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
 
         return (imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
