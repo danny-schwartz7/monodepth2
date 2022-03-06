@@ -10,11 +10,8 @@ class batchData:
 
 
 
-def main():
-    #dataset = MyDataset("train")
-    #dataset = MyDataset("test")
-    
-    type = "eval"
+def main():  
+    type = "train"
     batch_size = 4
     shuffle = True
     loader = get_dataloader(type, batch_size, shuffle)
