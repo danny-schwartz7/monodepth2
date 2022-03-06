@@ -14,13 +14,14 @@ def main():
     #dataset = MyDataset("train")
     #dataset = MyDataset("test")
     
-    type = "train"
+    type = "test"
     batch_size = 1
     shuffle = False
     loader = get_dataloader(type, batch_size, shuffle)
     i = 0
     for tup in loader:
-        #print(tup.focalLength)
+        print(tup.focalLength)
+        print(tup.depthL.size())
         #print(tup.imgR)
         i+=1
         print(f"I have completed {i} iterations out of {len(loader)}")
