@@ -151,6 +151,7 @@ class MyDataset(torch.utils.data.Dataset):
                     newimgL = resizeT(imgL)
                     print(f"{L_imgPath} now has shape: {newimgL.size()}")
                     im = transforms.ToPILImage()(imgL).convert("RGB")
+                    im.show()
                     plt.imshow(newimgL.numpy())
                     raise
                     break
