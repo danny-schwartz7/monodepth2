@@ -12,8 +12,8 @@ class batchData:
 
 def main():  
     type = "train"
-    batch_size = 4
-    shuffle = True
+    batch_size = 16
+    shuffle = False
     loader = get_dataloader(type, batch_size, shuffle)
     i = 0
     for tup in loader:
