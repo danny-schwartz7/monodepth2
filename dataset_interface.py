@@ -233,7 +233,7 @@ class MyDataset(torch.utils.data.Dataset):
         if depth_gtL.size() != (375, 1242):
             depth_gtL = resizeT(depth_gtL.unsqueeze(0))
             depth_gtL.squeeze(0)
-            #print("new L depth Size:", depth_gtL.size())
+            print("new L depth Size:", depth_gtL.size())
 
 
         if depth_gtR.size() != (375, 1242):
