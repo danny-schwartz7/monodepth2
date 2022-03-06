@@ -212,14 +212,14 @@ class MyDataset(torch.utils.data.Dataset):
 
         #check if need to resize
         resizeT = transforms.Resize((375, 1242))
-        print(f"on index: {index} has shape: {imgL.size()} and {imgR.size()}")
+        #print(f"on index: {index} has shape: {imgL.size()} and {imgR.size()}")
         if imgL.size() != (3, 375, 1242):
             imgL = resizeT(imgL)
-            print("new LSize:", imgL.size())
+            #print("new LSize:", imgL.size())
 
         if imgR.size() != (3, 375, 1242):
             imgR = resizeT(imgR)
-            print("new RSize:", imgR.size())
+            #print("new RSize:", imgR.size())
 
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
@@ -229,16 +229,22 @@ class MyDataset(torch.utils.data.Dataset):
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
 
-        print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
+        #print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
         if depth_gtL.size() != (375, 1242):
             depth_gtL = resizeT(depth_gtL.unsqueeze(0))
             depth_gtL.squeeze(0)
-            print("new L depth Size:", depth_gtL.size())
+            #print("new L depth Size:", depth_gtL.size())
 
 
         if depth_gtR.size() != (375, 1242):
             depth_gtR = resizeT(depth_gtR.unsqueeze(0))
             depth_gtR.squeeze(0)
-            print("new R depth Size:", depth_gtR.size())
+            #print("new R depth Size:", depth_gtR.size())
+
+
+        assert imgL.size() == (3, 375, 1242)
+        assert imgR.size() == (3, 375, 1242)
+        assert depth_gtL.size() == (375, 1242)
+        assert depth_gtR.size() == (375, 1242)
 
         return (imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
