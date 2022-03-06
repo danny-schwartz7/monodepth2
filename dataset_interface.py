@@ -231,7 +231,7 @@ class MyDataset(torch.utils.data.Dataset):
 
         print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
         if depth_gtL.size() != (375, 1242):
-            depth_gtL = F.interpolate(depth_gtL, (375, 1242))
+            depth_gtL = F.interpolate(depth_gtL, [375, 1242])
             print("new L depth Size:", depth_gtL.size())
 
         if depth_gtR.size() != (375, 1242):
