@@ -198,7 +198,7 @@ class MyDataset(torch.utils.data.Dataset):
         imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
 
         print(f"on index: {index} has shape: {imgL.size()} and {imgR.size()}")
-        #assert imgL.size() == (3, 375, 1242)
+        assert imgL.size() == (3, 376, 1241)
 
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
