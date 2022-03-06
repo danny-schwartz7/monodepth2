@@ -56,16 +56,37 @@ class UpConvElu(nn.Module):
         super(UpConvElu, self).__init__()
 
         self.activation = activation
-        self.upconv = nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
-                                         kernel_size=kernel_size, stride=stride,
-                                         padding=input_padding, output_padding=output_padding)
+        self.up = nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
+                                     kernel_size=kernel_size, stride=stride,
+                                     padding=input_padding, output_padding=output_padding)
         if self.activation:
             self.elu = nn.ELU()
 
     def forward(self, x):
         if not self.activation:
-            return self.upconv(x)
-        return self.elu(self.upconv(x))
+            return self.up(x)
+        return self.elu(self.up(x))
+
+
+class UpsampleAndSmooth(nn.Module):
+    def __init__(self, in_channels: int, out_channels: int,
+                 out_height: int, out_width: int, smooth_kernel_size: int = 5,
+                 activation: bool = True):
+        super(UpsampleAndSmooth, self).__init__()
+
+        self.activation = activation
+        upsampler = nn.Upsample(size=(out_height, out_width), mode='bilinear')
+        smoother = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
+                             padding="same", kernel_size=smooth_kernel_size)
+        self.up = nn.Sequential(upsampler, smoother)
+        if self.activation:
+            self.elu = nn.ELU()
+
+    def forward(self, x):
+        x = self.up(x)
+        if not self.activation:
+            return x
+        return self.elu(x)
 
 
 class Reshaper(nn.Module):
