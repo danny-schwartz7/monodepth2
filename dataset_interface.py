@@ -226,7 +226,17 @@ class MyDataset(torch.utils.data.Dataset):
         #convert to tensor
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
-        print("depth size: ", depth_gtL.size())
+
+        print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
+        if depth_gtL.size() != (375, 1242):
+            depth_gtL = resizeT(depth_gtL)
+            print("new L depth Size:", depth_gtL.size())
+
+        if depth_gtR.size() != (375, 1242):
+            depth_gtR = resizeT(depth_gtR)
+            print("new RSize:", depth_gtR.size())
+            raise
+
         #data_tuple : Data_Tuple = Data_Tuple(imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
 
         return (imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
