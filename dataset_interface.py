@@ -72,7 +72,7 @@ class MyDataset(torch.utils.data.Dataset):
             self.dataPathTuples = allImagePaths[numTrain:numTrain+numTest]
         elif type == "eval":
             self.dataPathTuples = allImagePaths[numTrain+numTest:]
-        print(f"retrieved {numImages} image/velo tuples using {len(self.dataPathTuples)} for {type}")
+        #print(f"retrieved {numImages} image/velo tuples using {len(self.dataPathTuples)} for {type}")
 
     def getCalibInfo(self, calibDir):
         #retrive calibration data
@@ -126,7 +126,7 @@ class MyDataset(torch.utils.data.Dataset):
             veloDatas = sorted([f.path for f in os.scandir(os.path.join(driveFolder, veloPath))])
             #make tuples with coresponding images
             if not(len(LImages) == len(RImages) and len(LImages) == len(veloDatas)):
-                print("unequal lengths in data fixing errors")
+                #print("unequal lengths in data fixing errors")
                 LFront = LImages[0][:-14]
                 RFront = RImages[0][:-14]
                 LimageNums = []
@@ -148,7 +148,7 @@ class MyDataset(torch.utils.data.Dataset):
                     
                     for i, num in enumerate(LimageNums):
                         if num not in veloNums and num in RimageNums:
-                            print(f"fixing error in image/velo corresponding to {num}")
+                            #print(f"fixing error in image/velo corresponding to {num}")
                             errorFilesL += [f"{LFront}{num}.jpg"]
                             errorFilesR += [f"{RFront}{num}.jpg"]
                     
@@ -171,8 +171,8 @@ class MyDataset(torch.utils.data.Dataset):
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]}")
                     totalImages += [(Lcam, Rcam, velo, calibDir)]
                 else:
-                    print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
-        print(totalImages[-1])
+                    #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
+                    pass
         return totalImages
 
     def __len__(self):
@@ -191,7 +191,8 @@ class MyDataset(torch.utils.data.Dataset):
         #get images
         imgL : Image = Image.open(L_imgPath)
         imgR : Image = Image.open(R_imgPath)
-
+        print(f"on index: {i} has shape: {imgL.shape} and {imgR.shape}")
+        assert imgL.shape == (3, 375, 1242)
         #conversion
         convert_tensor = transforms.ToTensor()
         imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
