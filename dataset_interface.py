@@ -106,12 +106,12 @@ class MyDataset(torch.utils.data.Dataset):
     def getAllImages(self):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
-        incorrectShapeDrives = ["2011_09_29", "2011_09_30", "2011_09_28"]
-        incorrectShapeDrives = [os.path.join(self.basedir, drive) for drive in incorrectShapeDrives]
+        # incorrectShapeDrives = ["2011_09_29", "2011_09_30", "2011_09_28"]
+        # incorrectShapeDrives = [os.path.join(self.basedir, drive) for drive in incorrectShapeDrives]
         
-        print(calibDirs)
-        print("\n", incorrectShapeDrives)
-        calibDirs = list(set(calibDirs) - set(incorrectShapeDrives))
+        # print(calibDirs)
+        # print("\n", incorrectShapeDrives)
+        # calibDirs = list(set(calibDirs) - set(incorrectShapeDrives))
         
         driveFolders = []
         for calibDir in calibDirs:
@@ -145,6 +145,9 @@ class MyDataset(torch.utils.data.Dataset):
 
                 if imgL.size() != (3, 375, 1242):
                     print(f"{L_imgPath} has shape: {imgL.size()} and {imgR.size()}")
+                    imgL = transforms.Resize(3, 375, 1242)
+                    print(f"{L_imgPath} now has shape: {imgL.size()}")
+                    raise
                     break
 
             #make tuples with coresponding images
