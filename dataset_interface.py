@@ -232,13 +232,13 @@ class MyDataset(torch.utils.data.Dataset):
         print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
         if depth_gtL.size() != (375, 1242):
             depth_gtL = resizeT(depth_gtL.unsqueeze(0))
+            depth_gtL.squeeze(0)
             print("new L depth Size:", depth_gtL.size())
 
-        if depth_gtR.size() != (375, 1242):
-            depth_gtR = F.interpolate(depth_gtR, (375, 1242))
-            print("new RSize:", depth_gtR.size())
-            raise
 
-        #data_tuple : Data_Tuple = Data_Tuple(imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
+        if depth_gtR.size() != (375, 1242):
+            depth_gtR = resizeT(depth_gtR.unsqueeze(0))
+            depth_gtR.squeeze(0)
+            print("new R depth Size:", depth_gtR.size())
 
         return (imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
