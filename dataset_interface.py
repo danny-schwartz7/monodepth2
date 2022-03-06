@@ -228,7 +228,6 @@ class MyDataset(torch.utils.data.Dataset):
         #convert to tensor
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
-        depth_convert = 
 
         print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
         if depth_gtL.size() != (375, 1242):
