@@ -14,7 +14,7 @@ def main():
     #dataset = MyDataset("train")
     #dataset = MyDataset("test")
     
-    type = "eval"
+    type = "train"
     batch_size = 1
     shuffle = False
     loader = get_dataloader(type, batch_size, shuffle)
