@@ -138,7 +138,7 @@ class MyDataset(torch.utils.data.Dataset):
 
                 if imgL.size() != (3, 375, 1242):
                     print(f"{L_imgPath} has shape: {imgL.size()} and {imgR.size()}")
-                
+                    break
 
             #make tuples with coresponding images
             if not(len(LImages) == len(RImages) and len(LImages) == len(veloDatas)):
