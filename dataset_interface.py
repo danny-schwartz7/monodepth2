@@ -145,7 +145,8 @@ class MyDataset(torch.utils.data.Dataset):
 
                 if imgL.size() != (3, 375, 1242):
                     print(f"{L_imgPath} has shape: {imgL.size()} and {imgR.size()}")
-                    imgL = transforms.Resize(3, 375, 1242)
+                    resizeT = transforms.Resize((3, 375, 1242))
+                    imgL = resizeT(imgL)
                     print(f"{L_imgPath} now has shape: {imgL.size()}")
                     raise
                     break
