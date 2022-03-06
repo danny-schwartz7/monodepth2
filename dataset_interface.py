@@ -134,29 +134,7 @@ class MyDataset(torch.utils.data.Dataset):
             #find velodyne images
             veloDatas = sorted([f.path for f in os.scandir(os.path.join(driveFolder, veloPath))])
 
-            #check image sizes
-            #get images
-            for L_imgPath, R_imgPath in zip(LImages, RImages):
-                imgL : Image = Image.open(L_imgPath)
-                imgR : Image = Image.open(R_imgPath)
-                
-                #conversion
-                convert_tensor = transforms.ToTensor()
-                imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
-                imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
-
-                if imgL.size() != (3, 375, 1242):
-                    print(f"{L_imgPath} has shape: {imgL.size()} and {imgR.size()}")
-                    resizeT = transforms.Resize((375, 1242))
-                    newimgL = resizeT(imgL)
-                    print(f"{L_imgPath} now has shape: {newimgL.size()}")
-                    im = transforms.ToPILImage()(imgL).convert("RGB")
-                    im.save('normalL.jpg')
-                    imNew = transforms.ToPILImage()(newimgL).convert("RGB")
-                    imNew.save('newL.jpg')
-                    raise
-                    break
-
+            
             #make tuples with coresponding images
             if not(len(LImages) == len(RImages) and len(LImages) == len(veloDatas)):
                 #print("unequal lengths in data fixing errors")
@@ -230,13 +208,21 @@ class MyDataset(torch.utils.data.Dataset):
         imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
         imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
 
+        #check if need to resize
+        resizeT = transforms.Resize((375, 1242))
         print(f"on index: {index} has shape: {imgL.size()} and {imgR.size()}")
-        assert imgL.size() == (3, 376, 1241)
+        if imgL.size() != (3, 375, 1242):
+            imgL = resizeT(imgL)
+            print("new LSize:", imgL.size())
+
+        if imgR.size() != (3, 375, 1242):
+            imgR = resizeT(imgR)
+            print("new RSize:", imgR.size())
 
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
         depth_gtR = generate_depth_map(calibDir, velo_filename=veloPath, cam = 3)
-
+        print("depth size: ", depth_gtL.shape())
         #convert to tensor
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
@@ -244,5 +230,3 @@ class MyDataset(torch.utils.data.Dataset):
         #data_tuple : Data_Tuple = Data_Tuple(imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
 
         return (imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
-                
-        
