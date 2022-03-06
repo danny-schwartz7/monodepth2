@@ -3,22 +3,28 @@ import pdb
 import torch
 
 
-from dataset_interface import MyDataset, to_depth, to_disparity
+from dataset_interface import MyDataset, to_depth, to_disparity, get_dataloader
+
+class batchData:
+    imgL : torch.tensor
 
 
 
 def main():
-    dataset = MyDataset("train")
-
-    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False)
-    depth = to_depth(1, dataset.baseline, dataset.focalLength)
-    print(f"depth from disp = 1: {depth}")
-    disparity = to_disparity(depth, dataset.baseline, dataset.focalLength)
-    print(f"to disparity using calced (should be 1): {disparity}")       
-
+    #dataset = MyDataset("train")
+    #dataset = MyDataset("test")
+    
+    type = "eval"
+    batch_size = 1
+    shuffle = False
+    loader = get_dataloader(type, batch_size, shuffle)
+    i = 0
     for tup in loader:
-
-        pdb.set_trace()
+        print(tup.focalLength)
+        print(tup.imgR)
+        i+=1
+        print(f"I have completed {i} iterations out of {len(loader)}")
+    
 
 
 if __name__ == "__main__":
