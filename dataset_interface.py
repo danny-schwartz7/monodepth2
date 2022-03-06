@@ -106,6 +106,12 @@ class MyDataset(torch.utils.data.Dataset):
     def getAllImages(self):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
+        incorrectShapeDrives = ["2011_09_29", "2011_09_30", "2011_09_28"]
+        incorrectShapeDrives = [os.path.join(self.basedir, drive) for drive in incorrectShapeDrives]
+        
+        print(calibDirs)
+        print("\n", incorrectShapeDrives)
+
         driveFolders = []
         for calibDir in calibDirs:
             driveFolders += [f.path  for f in os.scandir(calibDir) if f.is_dir()]
