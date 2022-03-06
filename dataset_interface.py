@@ -111,7 +111,8 @@ class MyDataset(torch.utils.data.Dataset):
         
         print(calibDirs)
         print("\n", incorrectShapeDrives)
-
+        calibDirs = list(set(calibDirs) - set(incorrectShapeDrives))
+        
         driveFolders = []
         for calibDir in calibDirs:
             driveFolders += [f.path  for f in os.scandir(calibDir) if f.is_dir()]
