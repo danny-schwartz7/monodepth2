@@ -67,7 +67,7 @@ class MyDataset(torch.utils.data.Dataset):
         numImages = len([img for drive in allImagesInDrives for img in drive])
         print("num drives: ", numDrives)
         print("num images: ", numImages)
-        print("avg images per drive: ", numDrives/numImages)
+        print("avg images per drive: ", numImages/numDrives)
         raise
         splits = [9/10, 1/20, 1/20]
         assert sum(splits) == 1
