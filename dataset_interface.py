@@ -35,7 +35,7 @@ def read_calib_file(path):
 
 def get_dataloader(type : str = "train", fraction_of_data_to_use : float = 1.0, batch_size : int = 1, shuffle : bool = False):
     dataset = MyDataset(type, fraction_of_data_to_use)
-    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, collate_fn = custom_collate)
+    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, collate_fn = custom_collate, num_workers=8)
     return loader
 
 def custom_collate(data):
