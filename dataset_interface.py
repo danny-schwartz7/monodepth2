@@ -211,6 +211,8 @@ class MyDataset(torch.utils.data.Dataset):
             numImagesInDrive = len(driveImages)
             print(f"num images in drive: {numImagesInDrive}")
             numToUse = int(numImagesInDrive * percUse)
+            if numToUse < 1:
+                numToUse = 1
             print(f"num to use: {len(driveImages[:numToUse])}")
 
             totalImages += [driveImages[:numToUse]]
