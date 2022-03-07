@@ -63,11 +63,12 @@ class MyDataset(torch.utils.data.Dataset):
 
         numDrives = 0
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
+        print(calibDirs)
         for calibDir in calibDirs:
-            numDrives += len([[f.path for f in os.scandir(calibDir) if f.is_dir()]])
+            numDrives += len([f.path for f in os.scandir(calibDir) if f.is_dir()])
         
-        print(numDrives)
-
+        print("num drives: ", numDrives)
+        raise
         allImagePaths = self.getAllImages()
         numImages = len(allImagePaths)
         splits = [9/10, 1/20, 1/20]
