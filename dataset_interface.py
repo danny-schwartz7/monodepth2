@@ -231,8 +231,8 @@ class MyDataset(torch.utils.data.Dataset):
         
         #conversion
         convert_tensor = transforms.ToTensor()
-        imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
-        imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
+        imgL : torch.Tensor = convert_tensor(imgL).float().to(DEVICE)     #tensor
+        imgR : torch.Tensor = convert_tensor(imgR).float().to(DEVICE)     #tensor
 
         #check if need to resize
         resizeT = transforms.Resize((375, 1242))
@@ -250,8 +250,8 @@ class MyDataset(torch.utils.data.Dataset):
         depth_gtR = generate_depth_map(calibDir, velo_filename=veloPath, cam = 3)
         
         #convert to tensor
-        depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
-        depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
+        depth_gtL : torch.Tensor = torch.Tensor(depth_gtL).to(DEVICE)
+        depth_gtR : torch.Tensor = torch.Tensor(depth_gtR).to(DEVICE)
 
         #print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
         if depth_gtL.size() != (375, 1242):
