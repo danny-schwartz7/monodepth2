@@ -57,8 +57,17 @@ class Data_Tuple():
         self.baseline = baseline
 
 class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, type : str):
+    def __init__(self, type : str, percUse : float = 1.0):
+        assert percUse <= 1.0
         self.basedir = 'kitti_data'
+
+        numDrives = 0
+        calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
+        for calibDir in calibDirs:
+            numDrives += len([[f.path for f in os.scandir(calibDir) if f.is_dir()]])
+        
+        print(numDrives)
+
         allImagePaths = self.getAllImages()
         numImages = len(allImagePaths)
         splits = [9/10, 1/20, 1/20]
@@ -79,7 +88,7 @@ class MyDataset(torch.utils.data.Dataset):
     def getCalibInfo(self, calibDir):
         #retrive calibration data
         cam2cam = read_calib_file(os.path.join(calibDir, "calib_cam_to_cam.txt"))
-        print(cam2cam)
+        print(calibDir)
         P_rectL = cam2cam['P_rect_02'].reshape(3, 4)
         P_rectR = cam2cam['P_rect_03'].reshape(3, 4)
         L_Kmat = cam2cam['K_02'].reshape(3,3)
@@ -109,8 +118,6 @@ class MyDataset(torch.utils.data.Dataset):
     def getAllImages(self):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
-        # incorrectShapeDrives = ["2011_09_29", "2011_09_30", "2011_09_28"]
-        # incorrectShapeDrives = [os.path.join(self.basedir, drive) for drive in incorrectShapeDrives]
         
         # print(calibDirs)
         # print("\n", incorrectShapeDrives)
