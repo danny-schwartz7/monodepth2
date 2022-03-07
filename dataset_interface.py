@@ -66,7 +66,6 @@ class MyDataset(torch.utils.data.Dataset):
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
         print(calibDirs)
         for calibDir in calibDirs:
-            driveFiles += [f.path for f in os.scandir(calibDir) if f.is_dir()]
             numDrives += len([f.path for f in os.scandir(calibDir) if f.is_dir()])
         
         #split drives
@@ -77,7 +76,7 @@ class MyDataset(torch.utils.data.Dataset):
         numImages = len(allImagePaths)
         print(len(numImages))
         raise
-    
+
         splits = [9/10, 1/20, 1/20]
         assert sum(splits) == 1
         #physical numbers
