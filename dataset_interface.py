@@ -200,7 +200,7 @@ class MyDataset(torch.utils.data.Dataset):
                 else:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
                     pass
-            totalImages += driveImages
+            totalImages += [driveImages]
         return totalImages
 
     def __len__(self):
