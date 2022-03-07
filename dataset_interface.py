@@ -19,7 +19,6 @@ def to_disparity(depth : torch.Tensor, baseline : torch.Tensor, focalLength : to
 
 def read_calib_file(path):
     float_chars = set("0123456789.e+- ")
-
     data = {}
     with open(path, 'r') as f:
         for line in f.readlines():
@@ -34,12 +33,13 @@ def read_calib_file(path):
                     pass  # casting error: data[key] already eq. value, so pass
     return data
 
-def get_dataloader(*args):
+def get_dataloader(type : str = "train", percentOfDataUse : float = 1.0, batch_size : int = 1, shuffle : bool = False):
     #arg 0 = type "train, test, eval"
     #arg 1 = batch size
     #arg 2 = shuffle : Bool
-    dataset = MyDataset(args[0])
-    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=args[1], shuffle=args[2], collate_fn = custom_collate)
+
+    dataset = MyDataset(type, percentOfDataUse)
+    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, collate_fn = custom_collate)
     return loader
 
 def custom_collate(data):
@@ -58,24 +58,45 @@ class Data_Tuple():
         self.baseline = baseline
 
 class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, type : str):
+    def __init__(self, type : str, percUse : float = 1.0):
+        assert percUse <= 1.0
         self.basedir = 'kitti_data'
-        allImagePaths = self.getAllImages()
-        numImages = len(allImagePaths)
-        splits = [9/10, 1/20, 1/20]
+
+        #get images from drives
+        allImagesInDrives = self.getAllImagesInDrives(percUse)
+        numDrives = len(allImagesInDrives)
+        numImages = len([img for drive in allImagesInDrives for img in drive])
+        #print("num drives: ", numDrives)
+        #print("num images: ", numImages)
+        avgImgDrive =  numImages/numDrives
+        #print("avg images per drive: ", avgImgDrive)
+
+        splits = [28/30, 1/30, 1/30]
         assert sum(splits) == 1
-        #physical numbers
-        numTrain : int  = int(splits[0]*numImages)
-        numTest : int   = int(splits[1]*numImages)
-        numEval : int   = numImages - numTrain - numTest
+        #physical number of images
+        numTrainImg : int  = int(splits[0]*numImages)
+        numTestImg : int   = int(splits[1]*numImages)
+        numEvalImg : int   = numImages - numTrainImg - numTestImg
+        
+        #approx drives
+        numTestDrives = int(numTestImg / avgImgDrive)
+        numEvalDrives = int(numEvalImg / avgImgDrive)
+        if numTestDrives < 1:
+            numTestDrives = 1
+        if numEvalDrives < 1:
+            numEvalDrives = 1
+        numTrainDrives = numDrives - numTestDrives - numEvalDrives
+
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
-            self.dataPathTuples = allImagePaths[0:numTrain]
+            self.dataPathTuples = [img for drive in allImagesInDrives[numTestDrives+numEvalDrives:] for img in drive]
         elif type == "test":
-            self.dataPathTuples = allImagePaths[numTrain:numTrain+numTest]
+            subset = allImagesInDrives[:numTestDrives]
+            self.dataPathTuples = [img for drive in subset for img in drive]
         elif type == "eval":
-            self.dataPathTuples = allImagePaths[numTrain+numTest:]
-        print(f"retrieved {numImages} image/velo tuples using {len(self.dataPathTuples)} for {type}")
+            self.dataPathTuples = [img for drive in allImagesInDrives[numTestDrives:numEvalDrives+numTestDrives] for img in drive]
+
+        print(f"loaded {len(self.dataPathTuples)} from {numTrainDrives} | {numTestDrives} | {numEvalDrives} images for {type}")
 
     def getCalibInfo(self, calibDir):
         #retrive calibration data
@@ -83,7 +104,7 @@ class MyDataset(torch.utils.data.Dataset):
         P_rectL = cam2cam['P_rect_02'].reshape(3, 4)
         P_rectR = cam2cam['P_rect_03'].reshape(3, 4)
         L_Kmat = cam2cam['K_02'].reshape(3,3)
-        R_Kmat = cam2cam['K_03'].reshape(3,3)
+        #R_Kmat = cam2cam['K_03'].reshape(3,3)
         focalLength : torch.Tensor = torch.Tensor([L_Kmat[0, 0]/1242])
 
         # Compute the rectified extrinsics from cam0 to camN
@@ -106,9 +127,14 @@ class MyDataset(torch.utils.data.Dataset):
 
         return focalLength, baseline
 
-    def getAllImages(self):
+    def getAllImagesInDrives(self, percUse : float):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
+        
+        # print(calibDirs)
+        # print("\n", incorrectShapeDrives)
+        # calibDirs = list(set(calibDirs) - set(incorrectShapeDrives))
+        
         driveFolders = []
         for calibDir in calibDirs:
             driveFolders += [f.path  for f in os.scandir(calibDir) if f.is_dir()]
@@ -118,6 +144,7 @@ class MyDataset(torch.utils.data.Dataset):
         veloPath = os.path.join("velodyne_points", "data")
         totalImages = []
         for driveFolder in driveFolders:
+            driveImages = []
             calibDir = driveFolder.split("/")[1]
             calibDir = os.path.join(self.basedir, calibDir)
             
@@ -127,9 +154,11 @@ class MyDataset(torch.utils.data.Dataset):
             RImages = sorted([f.path for f in os.scandir(os.path.join(driveFolder, RcamPath))])
             #find velodyne images
             veloDatas = sorted([f.path for f in os.scandir(os.path.join(driveFolder, veloPath))])
+
+            
             #make tuples with coresponding images
             if not(len(LImages) == len(RImages) and len(LImages) == len(veloDatas)):
-                print("unequal lengths in data fixing errors")
+                #print("unequal lengths in data fixing errors")
                 LFront = LImages[0][:-14]
                 RFront = RImages[0][:-14]
                 LimageNums = []
@@ -151,7 +180,7 @@ class MyDataset(torch.utils.data.Dataset):
                     
                     for i, num in enumerate(LimageNums):
                         if num not in veloNums and num in RimageNums:
-                            print(f"fixing error in image/velo corresponding to {num}")
+                            #print(f"fixing error in image/velo corresponding to {num}")
                             errorFilesL += [f"{LFront}{num}.jpg"]
                             errorFilesR += [f"{RFront}{num}.jpg"]
                     
@@ -172,16 +201,25 @@ class MyDataset(torch.utils.data.Dataset):
                 #print(f"{i} with {Lcam} and {Rcam} and {velo}")
                 if Lcam[-14:-4] == Rcam[-14:-4] and Lcam[-14:-4] == velo[-14:-4] and Rcam[-14:-4] == velo[-14:-4]:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]}")
-                    totalImages += [(Lcam, Rcam, velo, calibDir)]
+                    driveImages += [(Lcam, Rcam, velo, calibDir)]
                 else:
-                    print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
-        print(totalImages[-1])
+                    #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
+                    pass
+            
+            numImagesInDrive = len(driveImages)
+            #print(f"num images in drive: {numImagesInDrive}")
+            numToUse = int(numImagesInDrive * percUse)
+            if numToUse < 1:
+                numToUse = 1
+            #print(f"num to use: {len(driveImages[:numToUse])}")
+
+            totalImages += [driveImages[:numToUse]]
         return totalImages
 
     def __len__(self):
         return len(self.dataPathTuples)
 
-    def __getitem__(self, index) -> tuple: #(torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor):
+    def __getitem__(self, index) -> tuple: #(torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor):
         """
         cam 2 = left cam color
         cam 3 = right cam color
@@ -194,21 +232,48 @@ class MyDataset(torch.utils.data.Dataset):
         #get images
         imgL : Image = Image.open(L_imgPath)
         imgR : Image = Image.open(R_imgPath)
-
+        
         #conversion
         convert_tensor = transforms.ToTensor()
         imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
         imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
 
+        #check if need to resize
+        resizeT = transforms.Resize((375, 1242))
+        #print(f"on index: {index} has shape: {imgL.size()} and {imgR.size()}")
+        if imgL.size() != (3, 375, 1242):
+            imgL = resizeT(imgL)
+            #print("new LSize:", imgL.size())
+
+        if imgR.size() != (3, 375, 1242):
+            imgR = resizeT(imgR)
+            #print("new RSize:", imgR.size())
+
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
         depth_gtR = generate_depth_map(calibDir, velo_filename=veloPath, cam = 3)
-
+        
         #convert to tensor
         depth_gtL : torch.Tensor = torch.Tensor(depth_gtL)
         depth_gtR : torch.Tensor = torch.Tensor(depth_gtR)
-               
-        #data_tuple : Data_Tuple = Data_Tuple(imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
+
+        #print(f"has shape: {depth_gtL.size()} and {depth_gtR.size()}")
+        if depth_gtL.size() != (375, 1242):
+            depth_gtL = resizeT(depth_gtL.unsqueeze(0))
+            depth_gtL = depth_gtL.squeeze(0)
+            #print("new L depth Size:", depth_gtL.size())
+
+
+        if depth_gtR.size() != (375, 1242):
+            depth_gtR = resizeT(depth_gtR.unsqueeze(0))
+            depth_gtR = depth_gtR.squeeze(0)
+            #print("new R depth Size:", depth_gtR.size())
+
+
+        assert imgL.size() == (3, 375, 1242)
+        assert imgR.size() == (3, 375, 1242)
+        assert depth_gtL.size() == (375, 1242)
+        assert depth_gtR.size() == (375, 1242)
 
         return (imgL, imgR, depth_gtL, depth_gtR, focalLength, baseline)
                 

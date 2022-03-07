@@ -7,17 +7,18 @@ vice versa
 
 example usage for data set to make data loader: 
 loader = get_dataloader(args)
-where args is: type, batch_size, shuffle
-type = "train" | "test" | "eval"
-batch_size = int
-shuffle = bool
+
+how the function is defined
+def get_dataloader(type : str = "train", percentOfDataUse : float = 1.0, batch_size : int = 1, shuffle : bool = False):
+percentOfDataUse can be used to use only a small set of the data
 
 
 example usage:
 type = "train"
 batch_size = 1
 shuffle = False
-loader = get_dataloader(type, batch_size, shuffle)
+percentOfDataUse = 0.8
+loader = get_dataloader(type, percentOfDataUse, batch_size, shuffle)
 
 the get item function returns a data class that has 6 attributes:
 ex: for obj in loader:
