@@ -127,7 +127,7 @@ def main():
         val_loader = DataLoader(dataset=eval_dataset, batch_size=args.batch_size)
         test_loader = DataLoader(dataset=MyDataset("test"), batch_size=args.batch_size)
 
-        plot = True
+        plot = False
         evaluate = True
         #Save file
         for filename, loader in [("train", training_dataset), ("val", eval_dataset)]:
