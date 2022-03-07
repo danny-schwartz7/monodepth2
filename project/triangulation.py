@@ -6,9 +6,9 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 import torch
 import time
-import dataset_interface
+#import dataset_interface
 
-
+from evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
 from dataset_interface import MyDataset
 
 
@@ -65,24 +65,6 @@ def calculateDisparity(tup):
 def convertDisparityArrayToTensor(disparity) -> torch.tensor:
     return torch.tensor(disparity)
 
-def main():
-        # Size of images is 375 x 1242
-        args = get_args()
-
-        training_dataset = MyDataset("train")
-        eval_dataset = MyDataset("eval")
-        train_loader = DataLoader(dataset=training_dataset, batch_size=args.batch_size)
-        val_loader = DataLoader(dataset=eval_dataset, batch_size=args.batch_size)
-        test_loader = DataLoader(dataset=MyDataset("test"), batch_size=args.batch_size)
-
-        #Save file
-        for filename, loader in [("train", training_dataset), ("val", eval_dataset)]:
-            for tup in loader:
-                fig = data_tuple_to_plt_image(tup)
-                #plt.savefig(f"/home/schwartzd/{filename}.png") #Edit depending on which directory you want
-                plt.close(fig)
-                break
-
 
 def data_tuple_to_plt_image(tup):
 
@@ -133,6 +115,39 @@ def data_tuple_to_plt_image(tup):
 
     return fig
 
+
+def main():
+        # Size of images is 375 x 1242
+        args = get_args()
+
+        training_dataset = MyDataset("train")
+        eval_dataset = MyDataset("eval")
+        train_loader = DataLoader(dataset=training_dataset, batch_size=args.batch_size)
+        val_loader = DataLoader(dataset=eval_dataset, batch_size=args.batch_size)
+        test_loader = DataLoader(dataset=MyDataset("test"), batch_size=args.batch_size)
+
+        plot = True
+        evaluate = True
+        #Save file
+        for filename, loader in [("train", training_dataset), ("val", eval_dataset)]:
+            if plot:
+                for tup in loader:
+                    fig = data_tuple_to_plt_image(tup)
+                    plt.savefig(f"/home/alexeve3967/{filename}.png") #Edit depending on which directory you want
+                    plt.close(fig)
+                    break
+            if evaluate:
+                running_mse = 0
+                running_silog = 0
+                n = 0
+                for tup in loader:
+                    imgL, imgR, depth_gtL, depth_gtR = tup
+                    disp_cv = torch.tensor(calculateDisparity(tup))
+                    running_mse += calculate_quantitative_results_RMS(disp_cv, depth_gtL) ** 2
+                    running_silog += calculate_quantitaive_results_SILog(disp_cv, depth_gtL)
+                    n = n + 1
+                print("MSE average is ", running_mse)
+                print("SILog average is ", running_silog)
 
 def mainTest():
     start_time = time.time()

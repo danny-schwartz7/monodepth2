@@ -4,7 +4,7 @@ import os
 from torch.utils.data import DataLoader
 
 from dataset_interface import *
-import dataset_interface
+#import dataset_interface
 
 import numpy as np
 import cv2 as cv
