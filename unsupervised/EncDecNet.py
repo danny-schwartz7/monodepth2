@@ -1,10 +1,10 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from typing import Tuple
+from typing import Tuple, List
 from collections import deque
 
-from unsupervised.Blocks import ConvElu, UpConvElu, Reshaper
+from unsupervised.Blocks import ConvElu, UpConvElu, Reshaper, ResConv
 
 MAX_DISP_FRAC = 0.3  # from the paper
 
@@ -20,7 +20,7 @@ class EncDecNet(nn.Module):
         # start with 3 x 375 x 1242
         # first, get down to a reasonable resolution
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> List[Tuple[torch.Tensor, torch.Tensor]]:
         """
         TODO: in the unsupervised monocular depth paper, they output disp at 4 different scales. Should we do this?
 
@@ -45,17 +45,32 @@ class EncDecNet(nn.Module):
         for module in self.internal_blocks:
             x = module(x)
 
-        for module in self.skip_up_blocks:
-            skip = skip_tensor_deque.pop()
-            x = module(x + skip)
+        disp_pairs_at_scales = []
 
-        # TODO: can modify this to obtain multiple scales of depth
+        for i, module in enumerate(self.skip_up_blocks):
+            skip = skip_tensor_deque.pop()
+            if i > 1 and i < (len(self.skip_up_blocks) - 1):
+                x = module.upconv(x + skip)
+                disp_part = x[:, :2, :, :]
+                disp_part = MAX_DISP_FRAC * F.sigmoid(disp_part)
+                left_to_right_disp = disp_part[:, 0, :, :]
+                right_to_left_disp = disp_part[:, 1, :, :]
+                disp_pairs_at_scales.append((left_to_right_disp, right_to_left_disp))
+                x = module.elu(x)
+            else:
+                x = module(x + skip)
+
+        for module in self.smoothing_blocks:
+            x = module(x)
+
         disp_maps = MAX_DISP_FRAC * F.sigmoid(x)
 
         left_to_right_disp = disp_maps[:, 0, :, :]
         right_to_left_disp = disp_maps[:, 1, :, :]
 
-        return left_to_right_disp, right_to_left_disp
+        disp_pairs_at_scales.append((left_to_right_disp, right_to_left_disp))
+        # The largest scale is the last element of this list
+        return disp_pairs_at_scales
 
     def _init_model(self):
         self.skip_down_blocks = nn.ModuleList([
@@ -67,14 +82,6 @@ class EncDecNet(nn.Module):
             ConvElu(8, 16, (3, 7), (2, 3)),
             ConvElu(16, 32, (3, 7), (2, 2)),
             ConvElu(32, 4, (3, 7), (1, 1))
-        ])
-        self.skip_up_blocks = nn.ModuleList([
-            UpConvElu(4, 32, (3, 7), 1, 0, 0),
-            UpConvElu(32, 16, (3, 7), 2, 0, 0),
-            UpConvElu(16, 8, (3, 7), (2, 3), 0, 1),
-            UpConvElu(8, 4, 5, 2, 0, (0, 1)),
-            UpConvElu(4, 4, 5, 2, 0, (1, 0)),
-            UpConvElu(4, 2, 5, 2, 0, (0, 1), activation=False)
         ])
         self.internal_blocks = nn.ModuleList([
             nn.Flatten(),
@@ -88,6 +95,21 @@ class EncDecNet(nn.Module):
             Reshaper((1, 8, 16)),
             UpConvElu(1, 4, 1, 1, 0, 0)
         ])
+        self.skip_up_blocks = nn.ModuleList([
+            UpConvElu(4, 32, (3, 7), 1, 0, 0),
+            UpConvElu(32, 16, (3, 7), 2, 0, 0),
+            UpConvElu(16, 8, (3, 7), (2, 3), 0, 1),
+            UpConvElu(8, 4, 5, 2, 0, (0, 1)),
+            UpConvElu(4, 4, 5, 2, 0, (1, 0)),
 
+            # non-smoothed output:
+            # UpConvElu(4, 2, 5, 2, 0, (0, 1), activation=False)
 
+            # smoothed output:
+            UpConvElu(4, 4, 5, 2, 0, (0, 1))
+        ])
+        self.smoothing_blocks = nn.ModuleList([
+            ResConv(4, 7, 2),
+            nn.Conv2d(4, 2, 7, padding="same")
+        ])
 

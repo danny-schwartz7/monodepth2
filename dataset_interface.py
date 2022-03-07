@@ -6,12 +6,15 @@ import os
 import numpy as np
 from kitti_utils import generate_depth_map
 
+DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+EPSILON = 1e-8
+
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    depth = (baseline * focalLength)/disparity
+    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(disparity+EPSILON).to(DEVICE)
     return depth
 
 def to_disparity(depth : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    disparity = (baseline * focalLength)/depth
+    disparity = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(depth+EPSILON).to(DEVICE)
     return disparity
 
 def read_calib_file(path):
@@ -81,7 +84,7 @@ class MyDataset(torch.utils.data.Dataset):
         P_rectR = cam2cam['P_rect_03'].reshape(3, 4)
         L_Kmat = cam2cam['K_02'].reshape(3,3)
         R_Kmat = cam2cam['K_03'].reshape(3,3)
-        focalLength : torch.Tensor = torch.Tensor([L_Kmat[0, 0]])
+        focalLength : torch.Tensor = torch.Tensor([L_Kmat[0, 0]/1242])
 
         # Compute the rectified extrinsics from cam0 to camN
         T2 = np.eye(4)

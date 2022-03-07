@@ -10,16 +10,17 @@ class ResConv(nn.Module):
         self.kernel_size = kernel_size
         self.num_blocks = num_blocks
 
-        modules = []
+        sub_blocks = []
         for i in range(num_blocks):
-            modules.append(nn.Conv2d(in_channels=channels, out_channels=channels, kernel_size=kernel_size))
-            modules.append(nn.ELU())
+            sub_blocks.append(nn.Conv2d(in_channels=channels, out_channels=channels,
+                                     kernel_size=kernel_size, padding="same"))
+            sub_blocks.append(nn.ELU())
 
-        self.modules = nn.ModuleList(modules)
+        self.sub_blocks = nn.ModuleList(sub_blocks)
 
     def forward(self, x):
         output = x
-        for module in self.convs:
+        for module in self.sub_blocks:
             output = module(output)
 
         # skip connection
@@ -29,14 +30,19 @@ class ResConv(nn.Module):
 class ConvElu(nn.Module):
     def __init__(self, in_channels: int, out_channels: int,
                  kernel_size: Union[int, Tuple[int, int]],
-                 stride: Union[int, Tuple[int, int]]):
+                 stride: Union[int, Tuple[int, int]],
+                 activation: bool = True):
         super(ConvElu, self).__init__()
 
+        self.activation = activation
         self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
                               kernel_size=kernel_size, stride=stride)
-        self.elu = nn.ELU()
+        if self.activation:
+            self.elu = nn.ELU()
 
     def forward(self, x):
+        if not self.activation:
+            return self.conv(x)
         return self.elu(self.conv(x))
 
 
