@@ -21,7 +21,6 @@ def main():
         i+=1
         print(f"\nI have completed {i} iterations out of {len(loader)}")
         print(tup.focalLength)
-        print(tup.depthL.size())
         #print(tup.imgR)
         
         
