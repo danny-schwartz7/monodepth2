@@ -6,7 +6,7 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 import torch
 import time
-#import dataset_interface
+import dataset_interface
 
 from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
 
