@@ -92,7 +92,7 @@ class MyDataset(torch.utils.data.Dataset):
         if type == "train":
             self.dataPathTuples = [img for drive in allImagesInDrives[0:numTrainDrives] for img in drive]
         elif type == "test":
-            subset = allImagesInDrives[numTestDrives:numTrainDrives+numTestDrives]
+            subset = allImagesInDrives[numTrainDrives:numTrainDrives+numTestDrives]
             self.dataPathTuples = [img for drive in subset for img in drive]
         elif type == "eval":
             self.dataPathTuples = [img for drive in allImagesInDrives[numTrainDrives+numTestDrives:] for img in drive]
