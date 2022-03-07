@@ -9,6 +9,8 @@ import time
 #import dataset_interface
 
 from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
+
+from monodepth2 import dataset_interface
 from dataset_interface import MyDataset
 
 
