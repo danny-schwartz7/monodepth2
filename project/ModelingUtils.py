@@ -5,6 +5,8 @@ from tensorboardX import SummaryWriter
 from matplotlib import pyplot as plt
 from typing import Optional, Tuple
 
+from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
+from project.triangulation import calculateDisparity
 from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupervised_monodepth_loss, unsupervised_multiscale_monodepth_loss
 
 TRAIN_REPORT_INTERVAL = 50
@@ -176,12 +178,39 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
 
     test_loss = 0
     total_test_examples = 0
+    running_mse = 0
+    running_silog = 0
+
+    running_mse_cv = 0
+    running_silog_cv = 0
     for tup in tqdm(test_loader):
         with torch.no_grad():
             examples_in_batch = tup[0].shape[0]
-            test_loss += examples_in_batch * unsupervised_multi_scale_loss(tup, model).item()
+            #test_loss += examples_in_batch * unsupervised_multi_scale_loss(tup, model).item()
+
+            gt_left_depth = tup[2]
+
+            out = model.forward(tup[0].to(DEVICE))
+            disp_map = out[-1][0]
+
+            for i in range(examples_in_batch):
+                cur_left_disp = disp_map[i, :, :]
+                cur_depth_gt = gt_left_depth[i, :, :]
+                running_mse += calculate_quantitative_results_RMS(cur_left_disp, cur_depth_gt) ** 2
+                running_silog += calculate_quantitaive_results_SILog(cur_left_disp, cur_depth_gt)
+
+                imgL, imgR, depth_gtL, depth_gtR = tup[0][i, :, :, :], tup[1][i, :, :, :], tup[2][i, :, :], tup[3][i, :, :]
+
+                disp_cv = torch.tensor(calculateDisparity((imgL, imgR, depth_gtL, depth_gtR)))
+                running_mse_cv += calculate_quantitative_results_RMS(disp_cv, cur_depth_gt) ** 2
+                running_silog_cv += calculate_quantitaive_results_SILog(disp_cv, cur_depth_gt)
+
             total_test_examples += examples_in_batch
-    print(f"Average test loss was {test_loss/total_test_examples}")
+    # print(f"Average test loss was {test_loss/total_test_examples}")
+    print(f"Average model MSE was {running_mse / total_test_examples}")
+    print(f"Average model SILog error was {running_silog / total_test_examples}")
+    print(f"Average opencv MSE was {running_mse_cv / total_test_examples}")
+    print(f"Average opencv SILog error was {running_silog_cv / total_test_examples}")
     # TODO: add a function to compare this to ground-truth depth using methods to convert from disparity to depth
 
 # TODO: add a function that can display generated disp maps for images next to GT depth maps and the original images

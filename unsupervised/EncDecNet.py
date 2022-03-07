@@ -49,7 +49,7 @@ class EncDecNet(nn.Module):
 
         for i, module in enumerate(self.skip_up_blocks):
             skip = skip_tensor_deque.pop()
-            if i > 2 and i < (len(self.skip_up_blocks) - 1):
+            if i > 1 and i < (len(self.skip_up_blocks) - 1):
                 x = module.upconv(x + skip)
                 disp_part = x[:, :2, :, :]
                 disp_part = MAX_DISP_FRAC * F.sigmoid(disp_part)

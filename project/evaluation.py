@@ -4,6 +4,7 @@ import os
 from torch.utils.data import DataLoader
 
 from dataset_interface import *
+import dataset_interface
 
 import numpy as np
 import cv2 as cv
@@ -31,11 +32,19 @@ def make_dir_if_not_exists(dir: str):
     # Only need to convert disparities (which we have from outputs) to depth, not the other way around
 
 def calculate_quantitative_results_RMS(calculated_disparity_map: torch.Tensor, ground_truth_depth: torch.Tensor):
-    testDataset = MyDataset()
-    calculated_depth = testDataset.to_depth(calculated_disparity_map, testDataset.baseline, testDataset.focalLength)
+    testDataset = MyDataset("test")
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, testDataset.baseline, testDataset.focalLength)
     calculated_depth = calculated_depth.cpu().detach().numpy()
+    calculated_depth = np.abs(calculated_depth)
     ground_truth_depth = ground_truth_depth.cpu().detach().numpy()
-    RMSE = np.sqrt(np.mean((calculated_depth - ground_truth_depth) ** 2))
+
+    gt_depth_flat = ground_truth_depth.flatten()
+    calc_depth_flat = calculated_depth.flatten()
+
+    diff = calc_depth_flat - gt_depth_flat
+    diff = diff[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+
+    RMSE = np.sqrt(np.mean((diff) ** 2))
     return RMSE
 
 def get_RMS_total(all_pairs_of_calcualted_disparity_maps_and_ground_truths):
@@ -53,11 +62,22 @@ def get_RMS_total(all_pairs_of_calcualted_disparity_maps_and_ground_truths):
 
 
 def calculate_quantitaive_results_SILog(calculated_disparity_map: torch.Tensor, ground_truth_depth: torch.Tensor):
-    testDataset = MyDataset()
-    calculated_depth = testDataset.to_depth(calculated_disparity_map, testDataset.baseline, testDataset.focalLength)
+    testDataset = MyDataset("test")
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, testDataset.baseline, testDataset.focalLength)
     calculated_depth = calculated_depth.cpu().detach().numpy()
+    calculated_depth = np.abs(calculated_depth)
     ground_truth_depth = ground_truth_depth.cpu().detach().numpy()
-    di = np.log(calculated_depth) - np.log(ground_truth_depth)
+
+    epsilon = 1e-8
+
+    gt_depth_flat = ground_truth_depth.flatten()
+    calc_depth_flat = calculated_depth.flatten()
+
+    calc_depth_flat = calc_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+    gt_depth_flat = gt_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+
+    di = np.log(calc_depth_flat + epsilon) - np.log(gt_depth_flat + epsilon)
+
     diSquared = di ** 2
     firstTerm = np.mean(diSquared)
     secondTerm = (np.mean(di)) ** 2
