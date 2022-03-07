@@ -97,7 +97,7 @@ class MyDataset(torch.utils.data.Dataset):
         elif type == "eval":
             self.dataPathTuples = [img for drive in allImagesInDrives[numTrainDrives+numTestDrives:] for img in drive]
 
-        print(f"loaded {len(self.dataPathTuples)} images for {type}")
+        print(f"loaded {len(self.dataPathTuples)} from {numTrainDrives} | {numTestDrives} | {numEvalDrives} images for {type}")
 
 
     def getCalibInfo(self, calibDir):
