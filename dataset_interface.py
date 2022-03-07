@@ -206,9 +206,9 @@ class MyDataset(torch.utils.data.Dataset):
             numImagesInDrive = len(driveImages)
             print(f"num images in drive: {numImagesInDrive}")
             numToUse = int(numImagesInDrive * percUse)
-            print(f"num to use: {numToUse}")
+            print(f"num to use: {len(driveImages[:numToUse])}")
 
-            totalImages += [driveImages]
+            totalImages += [driveImages[:numToUse]]
         return totalImages
 
     def __len__(self):
