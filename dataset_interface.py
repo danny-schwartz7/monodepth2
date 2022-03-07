@@ -1,6 +1,5 @@
 import torch
 from torchvision import transforms
-#torch.multiprocessing.set_start_method('spawn')
 from typing import Tuple
 from PIL import Image
 import os

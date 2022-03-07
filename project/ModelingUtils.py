@@ -49,6 +49,11 @@ def unsupervised_multi_scale_loss(tup: Data_Tuple, model: nn.Module, return_indi
     stereo_pair = (left_img, right_img)
     disp_maps = model.forward(left_img)
 
+    # leftDisp = disp_maps[-1][0]
+    # gtDepth = tup.depthL
+    # leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength)
+    # loss = torch.mean(torch.sum(torch.pow(leftDepth - gtDepth, 2), dim = 0))    #MSQ
+
     return unsupervised_multiscale_monodepth_loss(stereo_pair, disp_maps, return_individual_losses=return_individual_losses)
 
 
