@@ -37,7 +37,7 @@ def get_dataloader(*args):
     #arg 0 = type "train, test, eval"
     #arg 1 = batch size
     #arg 2 = shuffle : Bool
-    dataset = MyDataset(args[0])
+    dataset = MyDataset(args[0], 1.0)
     loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=args[1], shuffle=args[2], collate_fn = custom_collate)
     return loader
 
@@ -61,16 +61,23 @@ class MyDataset(torch.utils.data.Dataset):
         assert percUse <= 1.0
         self.basedir = 'kitti_data'
 
+        #get all drive paths
         numDrives = 0
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
         print(calibDirs)
         for calibDir in calibDirs:
+            driveFiles += [f.path for f in os.scandir(calibDir) if f.is_dir()]
             numDrives += len([f.path for f in os.scandir(calibDir) if f.is_dir()])
         
+        #split drives
         print("num drives: ", numDrives)
-        raise
+
+        #get images from drives
         allImagePaths = self.getAllImages()
         numImages = len(allImagePaths)
+        print(len(numImages))
+        raise
+    
         splits = [9/10, 1/20, 1/20]
         assert sum(splits) == 1
         #physical numbers
@@ -189,7 +196,7 @@ class MyDataset(torch.utils.data.Dataset):
                 #print(f"{i} with {Lcam} and {Rcam} and {velo}")
                 if Lcam[-14:-4] == Rcam[-14:-4] and Lcam[-14:-4] == velo[-14:-4] and Rcam[-14:-4] == velo[-14:-4]:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]}")
-                    totalImages += [(Lcam, Rcam, velo, calibDir)]
+                    totalImages += [[(Lcam, Rcam, velo, calibDir)]]
                 else:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
                     pass
