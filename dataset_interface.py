@@ -8,8 +8,6 @@ import os
 import numpy as np
 from kitti_utils import generate_depth_map
 
-import matplotlib as plt
-
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
     depth = (baseline * focalLength)/disparity
     return depth
@@ -81,6 +79,7 @@ class MyDataset(torch.utils.data.Dataset):
     def getCalibInfo(self, calibDir):
         #retrive calibration data
         cam2cam = read_calib_file(os.path.join(calibDir, "calib_cam_to_cam.txt"))
+        print(cam2cam)
         P_rectL = cam2cam['P_rect_02'].reshape(3, 4)
         P_rectR = cam2cam['P_rect_03'].reshape(3, 4)
         L_Kmat = cam2cam['K_02'].reshape(3,3)
