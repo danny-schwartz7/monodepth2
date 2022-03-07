@@ -147,8 +147,8 @@ def main():
                     running_mse += calculate_quantitative_results_RMS(disp_cv, depth_gtL) ** 2
                     running_silog += calculate_quantitaive_results_SILog(disp_cv, depth_gtL)
                     n = n + 1
-                print("MSE average is ", running_mse)
-                print("SILog average is ", running_silog)
+                print("MSE average is ", running_mse / n)
+                print("SILog average is ", running_silog / n)
 
 def mainTest():
     start_time = time.time()
