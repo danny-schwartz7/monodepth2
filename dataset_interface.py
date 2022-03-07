@@ -37,7 +37,7 @@ def get_dataloader(*args):
     #arg 0 = type "train, test, eval"
     #arg 1 = batch size
     #arg 2 = shuffle : Bool
-    dataset = MyDataset(args[0], 1.0)
+    dataset = MyDataset(args[0], 0.5)
     loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=args[1], shuffle=args[2], collate_fn = custom_collate)
     return loader
 
@@ -57,7 +57,7 @@ class Data_Tuple():
         self.baseline = baseline
 
 class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, type : str, percUse : float = 0.5):
+    def __init__(self, type : str, percUse : float = 1.0):
         assert percUse <= 1.0
         self.basedir = 'kitti_data'
 
