@@ -71,7 +71,7 @@ class MyDataset(torch.utils.data.Dataset):
         avgImgDrive =  numImages/numDrives
         print("avg images per drive: ", avgImgDrive)
 
-        splits = [9/10, 1/20, 1/20]
+        splits = [28/30, 1/30, 1/30]
         assert sum(splits) == 1
         #physical number of images
         numTrainImg : int  = int(splits[0]*numImages)

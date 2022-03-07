@@ -13,8 +13,8 @@ class batchData:
 def main():  
     type = "train"
     batch_size = 16
-    shuffle = False
-    percentDataToUse = 0.1
+    shuffle = True
+    percentDataToUse = 0.01
     loader = get_dataloader(type, percentDataToUse, batch_size, shuffle)
     i = 0
     for tup in loader:
