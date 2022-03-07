@@ -7,20 +7,21 @@ from typing import Optional, Tuple
 
 from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
 import dataset_interface
+from dataset_interface import Data_Tuple
 from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupervised_monodepth_loss, unsupervised_multiscale_monodepth_loss
 
 TRAIN_REPORT_INTERVAL = 50
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-def unsupervised_single_scale_loss(tup, model: nn.Module, return_individual_losses: bool = False):
+def unsupervised_single_scale_loss(tup: Data_Tuple, model: nn.Module, return_individual_losses: bool = False):
     """
 
     :param tup: A tuple from the dataloader
     :return: loss
     """
 
-    left_img, right_img, _, _ = tup
+    left_img, right_img = tup.imgL, tup.imgR
 
     left_img = left_img.to(DEVICE)
     right_img = right_img.to(DEVICE)
@@ -33,14 +34,14 @@ def unsupervised_single_scale_loss(tup, model: nn.Module, return_individual_loss
     return unsupervised_monodepth_loss(stereo_pair, disp_maps, reconstructions, return_individual_losses=return_individual_losses)
 
 
-def unsupervised_multi_scale_loss(tup, model: nn.Module, return_individual_losses: bool = False):
+def unsupervised_multi_scale_loss(tup: Data_Tuple, model: nn.Module, return_individual_losses: bool = False):
     """
 
     :param tup: A tuple from the dataloader
     :return: loss
     """
 
-    left_img, right_img, _, _ = tup
+    left_img, right_img = tup.imgL, tup.imgR
 
     left_img = left_img.to(DEVICE)
     right_img = right_img.to(DEVICE)
@@ -87,7 +88,7 @@ def train(train_loader: torch.utils.data.DataLoader,
 
         model.train()
         for tup in tqdm(train_loader, desc=f"Training - Epoch {epoch}", leave=False):
-            examples_in_batch = tup[0].shape[0]
+            examples_in_batch = tup.imgL.shape[0]
 
             optimizer.zero_grad()
             recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
@@ -127,7 +128,7 @@ def train(train_loader: torch.utils.data.DataLoader,
         for tup in tqdm(val_loader, desc=f"Validation - Epoch {epoch}", leave=False):
             model.eval()
             with torch.no_grad():
-                examples_in_batch = tup[0].shape[0]
+                examples_in_batch = tup.imgL.shape[0]
 
                 recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
                 val_loss += examples_in_batch * total_loss.item()
@@ -216,10 +217,13 @@ def visualize_disparity_maps(data_loader: torch.utils.data.DataLoader, model: nn
 
 
 def data_tuple_to_plt_image(tup, model: nn.Module):
+    """
+    This function still uses the old (length-6 tuple) format based on quirks of Parker's implementation
+    """
     model.eval()
 
     tup = convert_tuple_to_batched_if_necessary(tup)
-    left_image, right_image, left_depth_gt, right_depth_gt = tup
+    left_image, right_image, left_depth_gt, right_depth_gt, _, _ = tup
     left_image = left_image.to(DEVICE)
     right_image = right_image.to(DEVICE)
 
@@ -262,11 +266,13 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
 
 
 def convert_tuple_to_batched_if_necessary(tup):
-    left_image, right_image, left_depth_gt, right_depth_gt = tup
+    left_image, right_image, left_depth_gt, right_depth_gt, focal_len, baseline = tup
     if len(left_image.shape) == 4:
         return tup
     left_image = left_image.unsqueeze(dim=0)
     right_image = right_image.unsqueeze(dim=0)
     left_depth_gt = left_depth_gt.unsqueeze(dim=0)
     right_depth_gt = right_depth_gt.unsqueeze(dim=0)
-    return (left_image, right_image, left_depth_gt, right_depth_gt)
+    focal_len = focal_len.unsqueeze(dim=0)
+    baseline = baseline.unsqueeze(dim=0)
+    return (left_image, right_image, left_depth_gt, right_depth_gt, focal_len, baseline)
