@@ -3,8 +3,9 @@ import argparse
 import os
 from torch.utils.data import DataLoader
 
+import dataset_interface
 from dataset_interface import *
-#import dataset_interface
+
 
 import numpy as np
 import cv2 as cv
