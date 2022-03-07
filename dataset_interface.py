@@ -57,12 +57,12 @@ class Data_Tuple():
         self.baseline = baseline
 
 class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, type : str, percUse : float = 1.0):
+    def __init__(self, type : str, percUse : float = 0.5):
         assert percUse <= 1.0
         self.basedir = 'kitti_data'
 
         #get images from drives
-        allImagesInDrives = self.getAllImagesInDrives()
+        allImagesInDrives = self.getAllImagesInDrives(percUse)
         numDrives = len(allImagesInDrives)
         numImages = len([img for drive in allImagesInDrives for img in drive])
         print("num drives: ", numDrives)
@@ -78,15 +78,13 @@ class MyDataset(torch.utils.data.Dataset):
         numEvalImg : int   = numImages - numTrainImg - numTestImg
         
         #approx drives
-        
         numTestDrives = int(numTestImg / avgImgDrive)
         numEvalDrives = int(numEvalImg / avgImgDrive)
         print(f"num test drives {numTestDrives} num eval drives {numEvalDrives}")
         numTrainDrives = numDrives - numTestDrives - numEvalDrives
         print("num train drives", numTrainDrives)
+
         raise
-
-
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
             self.dataPathTuples = allImagePaths[0:numTrain]
@@ -126,7 +124,7 @@ class MyDataset(torch.utils.data.Dataset):
 
         return focalLength, baseline
 
-    def getAllImagesInDrives(self):
+    def getAllImagesInDrives(self, percUse : float):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
         
@@ -204,6 +202,12 @@ class MyDataset(torch.utils.data.Dataset):
                 else:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
                     pass
+            
+            numImagesInDrive = len(driveImages)
+            print(f"num images in drive: {numImagesInDrive}")
+            numToUse = int(numImagesInDrive * percUse)
+            print(f"num to use: {numToUse}")
+
             totalImages += [driveImages]
         return totalImages
 
