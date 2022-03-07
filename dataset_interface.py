@@ -60,29 +60,24 @@ class MyDataset(torch.utils.data.Dataset):
     def __init__(self, type : str, percUse : float = 1.0):
         assert percUse <= 1.0
         self.basedir = 'kitti_data'
-
-        #get all drive paths
-        numDrives = 0
-        calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
-        print(calibDirs)
-        for calibDir in calibDirs:
-            numDrives += len([f.path for f in os.scandir(calibDir) if f.is_dir()])
         
         #split drives
         print("num drives: ", numDrives)
 
         #get images from drives
-        allImagePaths = self.getAllImages()
-        numImages = len(allImagePaths)
-        print(numImages)
+        allImagesInDrives = self.getAllImagesInDrives()
+        numDrives = len(allImagesInDrives)
+        numImages = len([img for drive in allImagesInDrives for img in drive])
+        print("num drives: ", numDrives)
+        print("num images: ", numImages)
+        print("avg images per drive: ", numDrives/numImages)
         raise
-
         splits = [9/10, 1/20, 1/20]
         assert sum(splits) == 1
         #physical numbers
-        numTrain : int  = int(splits[0]*numImages)
-        numTest : int   = int(splits[1]*numImages)
-        numEval : int   = numImages - numTrain - numTest
+        numTrain : int  = int(splits[0]*numDrives)
+        numTest : int   = int(splits[1]*numDrives)
+        numEval : int   = numDrives - numTrain - numTest
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
             self.dataPathTuples = allImagePaths[0:numTrain]
@@ -122,7 +117,7 @@ class MyDataset(torch.utils.data.Dataset):
 
         return focalLength, baseline
 
-    def getAllImages(self):
+    def getAllImagesInDrives(self):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
         
