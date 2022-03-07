@@ -183,7 +183,7 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
 
     for tup in tqdm(test_loader):
         with torch.no_grad():
-            examples_in_batch = tup[0].shape[0]
+            examples_in_batch = tup.imgL.shape[0]
             #test_loss += examples_in_batch * unsupervised_multi_scale_loss(tup, model).item()
 
             out = model.forward(tup.imgL.to(DEVICE))
@@ -192,11 +192,11 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
             for i in range(examples_in_batch):
                 cur_left_disp = disp_map[i, :, :]
 
-                predicted_depth = dataset_interface.to_depth(cur_left_disp, focalLength=tup.focal_length[i],
+                predicted_depth = dataset_interface.to_depth(cur_left_disp, focalLength=tup.focalLength[i],
                                                              baseline=tup.baseline[i])
 
-                individual_tup = (tup.imgL[i, :, :, :], tup.imgR[i, :, :, :], tup.depthL[i, :, :, :],
-                                  tup.depthR[:, :, :, :], tup.focal_length[i], tup.baseline[i])
+                individual_tup = (tup.imgL[i, :, :, :], tup.imgR[i, :, :, :], tup.depthL[i, :, :],
+                                  tup.depthR[:, :, :], tup.focalLength[i], tup.baseline[i])
 
                 running_mse += calculate_quantitative_results_RMS(predicted_depth, individual_tup) ** 2
                 running_silog += calculate_quantitaive_results_SILog(predicted_depth, individual_tup)

@@ -33,12 +33,8 @@ def read_calib_file(path):
                     pass  # casting error: data[key] already eq. value, so pass
     return data
 
-def get_dataloader(type : str = "train", percentOfDataUse : float = 1.0, batch_size : int = 1, shuffle : bool = False):
-    #arg 0 = type "train, test, eval"
-    #arg 1 = batch size
-    #arg 2 = shuffle : Bool
-
-    dataset = MyDataset(type, percentOfDataUse)
+def get_dataloader(type : str = "train", fraction_of_data_to_use : float = 1.0, batch_size : int = 1, shuffle : bool = False):
+    dataset = MyDataset(type, fraction_of_data_to_use)
     loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, collate_fn = custom_collate)
     return loader
 
@@ -58,12 +54,12 @@ class Data_Tuple():
         self.baseline = baseline
 
 class MyDataset(torch.utils.data.Dataset):
-    def __init__(self, type : str, percUse : float = 1.0):
-        assert percUse <= 1.0
+    def __init__(self, type : str, frac_to_use : float = 1.0):
+        assert frac_to_use <= 1.0
         self.basedir = 'kitti_data'
 
         #get images from drives
-        allImagesInDrives = self.getAllImagesInDrives(percUse)
+        allImagesInDrives = self.getAllImagesInDrives(frac_to_use)
         numDrives = len(allImagesInDrives)
         numImages = len([img for drive in allImagesInDrives for img in drive])
         #print("num drives: ", numDrives)
@@ -127,7 +123,7 @@ class MyDataset(torch.utils.data.Dataset):
 
         return focalLength, baseline
 
-    def getAllImagesInDrives(self, percUse : float):
+    def getAllImagesInDrives(self, frac_to_use : float):
         #path to drive for data
         calibDirs = [f.path  for f in os.scandir(self.basedir) if f.is_dir()]
         
@@ -208,7 +204,7 @@ class MyDataset(torch.utils.data.Dataset):
             
             numImagesInDrive = len(driveImages)
             #print(f"num images in drive: {numImagesInDrive}")
-            numToUse = int(numImagesInDrive * percUse)
+            numToUse = int(numImagesInDrive * frac_to_use)
             if numToUse < 1:
                 numToUse = 1
             #print(f"num to use: {len(driveImages[:numToUse])}")

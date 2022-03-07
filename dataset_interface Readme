@@ -17,8 +17,8 @@ example usage:
 type = "train"
 batch_size = 1
 shuffle = False
-percentOfDataUse = 0.8
-loader = get_dataloader(type, percentOfDataUse, batch_size, shuffle)
+fraction_of_data_to_use = 0.8
+loader = get_dataloader(type, fraction_of_data_to_use, batch_size, shuffle)
 
 the get item function returns a data class that has 6 attributes:
 ex: for obj in loader:
