@@ -60,9 +60,6 @@ class MyDataset(torch.utils.data.Dataset):
     def __init__(self, type : str, percUse : float = 1.0):
         assert percUse <= 1.0
         self.basedir = 'kitti_data'
-        
-        #split drives
-        print("num drives: ", numDrives)
 
         #get images from drives
         allImagesInDrives = self.getAllImagesInDrives()
