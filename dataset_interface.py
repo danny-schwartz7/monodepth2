@@ -74,7 +74,7 @@ class MyDataset(torch.utils.data.Dataset):
         #get images from drives
         allImagePaths = self.getAllImages()
         numImages = len(allImagePaths)
-        print(len(numImages))
+        print(numImages)
         raise
 
         splits = [9/10, 1/20, 1/20]
@@ -139,6 +139,7 @@ class MyDataset(torch.utils.data.Dataset):
         veloPath = os.path.join("velodyne_points", "data")
         totalImages = []
         for driveFolder in driveFolders:
+            driveImages = []
             calibDir = driveFolder.split("/")[1]
             calibDir = os.path.join(self.basedir, calibDir)
             
@@ -195,10 +196,11 @@ class MyDataset(torch.utils.data.Dataset):
                 #print(f"{i} with {Lcam} and {Rcam} and {velo}")
                 if Lcam[-14:-4] == Rcam[-14:-4] and Lcam[-14:-4] == velo[-14:-4] and Rcam[-14:-4] == velo[-14:-4]:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]}")
-                    totalImages += [[(Lcam, Rcam, velo, calibDir)]]
+                    driveImages += [(Lcam, Rcam, velo, calibDir)]
                 else:
                     #print(f"{driveFolder} with {Lcam[-14:-4]} : {Rcam[-14:-4]} : {velo[-14:-4]} error")
                     pass
+            totalImages += driveImages
         return totalImages
 
     def __len__(self):
