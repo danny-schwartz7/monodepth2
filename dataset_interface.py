@@ -76,6 +76,7 @@ class MyDataset(torch.utils.data.Dataset):
         #physical number of images
         numTrainImg : int  = int(splits[0]*numImages)
         numTestImg : int   = int(splits[1]*numImages)
+        print("num images for testing:" , numTestImg)
         numEvalImg : int   = numImages - numTrainImg - numTestImg
         
         #approx drives
@@ -90,9 +91,9 @@ class MyDataset(torch.utils.data.Dataset):
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
             self.dataPathTuples = [img for drive in allImagesInDrives[0:numTrainDrives] for img in drive]
-
         elif type == "test":
-            self.dataPathTuples = [img for drive in allImagesInDrives[numTestDrives:numTrainDrives+numTestDrives] for img in drive]
+            subset = allImagesInDrives[numTestDrives:numTrainDrives+numTestDrives]
+            self.dataPathTuples = [img for drive in subset for img in drive]
         elif type == "eval":
             self.dataPathTuples = [img for drive in allImagesInDrives[numTrainDrives+numTestDrives:] for img in drive]
 
