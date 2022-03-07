@@ -2,7 +2,7 @@ import torch
 import argparse
 import os
 from torch.utils.data import DataLoader
-
+from typing import Tuple
 import dataset_interface
 from dataset_interface import *
 
@@ -32,12 +32,12 @@ def make_dir_if_not_exists(dir: str):
     # Iterate over the entire dataloader output and average the results from the below
     # Only need to convert disparities (which we have from outputs) to depth, not the other way around
 
-def calculate_quantitative_results_RMS(calculated_disparity_map: torch.Tensor, ground_truth_depth: torch.Tensor):
-    testDataset = MyDataset("test")
-    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, testDataset.baseline, testDataset.focalLength)
+def calculate_quantitative_results_RMS(calculated_disparity_map: torch.Tensor, tup: Tuple):
+    imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
     calculated_depth = calculated_depth.cpu().detach().numpy()
     calculated_depth = np.abs(calculated_depth)
-    ground_truth_depth = ground_truth_depth.cpu().detach().numpy()
+    ground_truth_depth = depth_gtL.cpu().detach().numpy()
 
     gt_depth_flat = ground_truth_depth.flatten()
     calc_depth_flat = calculated_depth.flatten()
@@ -62,12 +62,12 @@ def get_RMS_total(all_pairs_of_calcualted_disparity_maps_and_ground_truths):
 
 
 
-def calculate_quantitaive_results_SILog(calculated_disparity_map: torch.Tensor, ground_truth_depth: torch.Tensor):
-    testDataset = MyDataset("test")
-    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, testDataset.baseline, testDataset.focalLength)
+def calculate_quantitaive_results_SILog(calculated_disparity_map: torch.Tensor, tup: Tuple):
+    imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
     calculated_depth = calculated_depth.cpu().detach().numpy()
     calculated_depth = np.abs(calculated_depth)
-    ground_truth_depth = ground_truth_depth.cpu().detach().numpy()
+    ground_truth_depth = depth_gtL.cpu().detach().numpy()
 
     epsilon = 1e-8
 

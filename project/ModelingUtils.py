@@ -202,8 +202,8 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
                 imgL, imgR, depth_gtL, depth_gtR = tup[0][i, :, :, :], tup[1][i, :, :, :], tup[2][i, :, :], tup[3][i, :, :]
 
                 disp_cv = torch.tensor(calculateDisparity((imgL, imgR, depth_gtL, depth_gtR)))
-                running_mse_cv += calculate_quantitative_results_RMS(disp_cv, cur_depth_gt) ** 2
-                running_silog_cv += calculate_quantitaive_results_SILog(disp_cv, cur_depth_gt)
+                running_mse_cv += calculate_quantitative_results_RMS(disp_cv, tup) ** 2
+                running_silog_cv += calculate_quantitaive_results_SILog(disp_cv, tup)
 
             total_test_examples += examples_in_batch
     # print(f"Average test loss was {test_loss/total_test_examples}")

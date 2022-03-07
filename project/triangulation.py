@@ -43,7 +43,7 @@ def calculateDisparityTest():
     return disparity
 
 def calculateDisparity(tup):
-    imgL, imgR, depth_gtL, depth_gtR = tup
+    imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
     imgL = imgL.cpu().detach().numpy()
     imgR = imgR.cpu().detach().numpy()
     depth_gtL = depth_gtL.cpu().detach().numpy()
@@ -69,7 +69,7 @@ def convertDisparityArrayToTensor(disparity) -> torch.tensor:
 
 def data_tuple_to_plt_image(tup):
 
-    left_image, right_image, left_depth_gt, right_depth_gt = tup
+    left_image, right_image, left_depth_gt, right_depth_gt, focal_length, baseline = tup
     disparity = calculateDisparity(tup)
     dataset = MyDataset("train")
     depth = dataset_interface.to_depth(torch.tensor(disparity), torch.tensor(dataset.baseline), torch.tensor(dataset.focalLength)).cpu().detach().numpy()
@@ -142,10 +142,9 @@ def main():
                 running_silog = 0
                 n = 0
                 for tup in loader:
-                    imgL, imgR, depth_gtL, depth_gtR = tup
                     disp_cv = torch.tensor(calculateDisparity(tup))
-                    running_mse += calculate_quantitative_results_RMS(disp_cv, depth_gtL) ** 2
-                    running_silog += calculate_quantitaive_results_SILog(disp_cv, depth_gtL)
+                    running_mse += calculate_quantitative_results_RMS(disp_cv, tup) ** 2
+                    running_silog += calculate_quantitaive_results_SILog(disp_cv, tup)
                     n = n + 1
                 print("MSE average is ", running_mse / n)
                 print("SILog average is ", running_silog / n)
