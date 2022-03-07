@@ -67,14 +67,26 @@ class MyDataset(torch.utils.data.Dataset):
         numImages = len([img for drive in allImagesInDrives for img in drive])
         print("num drives: ", numDrives)
         print("num images: ", numImages)
-        print("avg images per drive: ", numImages/numDrives)
-        raise
+        avgImgDrive =  numImages/numDrives
+        print("avg images per drive: ", avgImgDrive)
+
         splits = [9/10, 1/20, 1/20]
         assert sum(splits) == 1
-        #physical numbers
-        numTrain : int  = int(splits[0]*numDrives)
-        numTest : int   = int(splits[1]*numDrives)
-        numEval : int   = numDrives - numTrain - numTest
+        #physical number of images
+        numTrainImg : int  = int(splits[0]*numImages)
+        numTestImg : int   = int(splits[1]*numImages)
+        numEvalImg : int   = numImages - numTrainImg - numTestImg
+        
+        #approx drives
+        
+        numTestDrives = int(numTestImg / avgImgDrive)
+        numEvalDrives = int(numEvalImg / avgImgDrive)
+        print(f"num test drives {numTestDrives} num eval drives {numEvalDrives}")
+        numTrainDrives = numDrives - numTestDrives - numEvalDrives
+        print("num train drives", numTrainDrives)
+        raise
+
+
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
             self.dataPathTuples = allImagePaths[0:numTrain]
