@@ -14,7 +14,8 @@ def main():
     type = "train"
     batch_size = 16
     shuffle = False
-    loader = get_dataloader(type, batch_size, shuffle)
+    percentDataToUse = 0.1
+    loader = get_dataloader(type, percentDataToUse, batch_size, shuffle)
     i = 0
     for tup in loader:
         i+=1

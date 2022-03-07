@@ -33,12 +33,13 @@ def read_calib_file(path):
                     pass  # casting error: data[key] already eq. value, so pass
     return data
 
-def get_dataloader(*args):
+def get_dataloader(type : str = "train", percentOfDataUse : float = 1.0, batch_size : int = 1, shuffle : bool = False):
     #arg 0 = type "train, test, eval"
     #arg 1 = batch size
     #arg 2 = shuffle : Bool
-    dataset = MyDataset(args[0], 0.5)
-    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=args[1], shuffle=args[2], collate_fn = custom_collate)
+
+    dataset = MyDataset(type, percentOfDataUse)
+    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, collate_fn = custom_collate)
     return loader
 
 def custom_collate(data):
@@ -80,24 +81,27 @@ class MyDataset(torch.utils.data.Dataset):
         #approx drives
         numTestDrives = int(numTestImg / avgImgDrive)
         numEvalDrives = int(numEvalImg / avgImgDrive)
-        print(f"num test drives {numTestDrives} num eval drives {numEvalDrives}")
+        if numTestDrives < 1:
+            numTestDrives = 1
+        if numEvalDrives < 1:
+            numEvalDrives = 1
         numTrainDrives = numDrives - numTestDrives - numEvalDrives
-        print("num train drives", numTrainDrives)
 
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
             self.dataPathTuples = [img for drive in allImagesInDrives[0:numTrainDrives] for img in drive]
-            print(len(self.dataPathTuples))
 
         elif type == "test":
             self.dataPathTuples = [img for drive in allImagesInDrives[numTestDrives:numTrainDrives+numTestDrives] for img in drive]
         elif type == "eval":
             self.dataPathTuples = [img for drive in allImagesInDrives[numTrainDrives+numTestDrives:] for img in drive]
 
+        print(f"loaded {len(self.dataPathTuples)} images for {type}")
+
+
     def getCalibInfo(self, calibDir):
         #retrive calibration data
         cam2cam = read_calib_file(os.path.join(calibDir, "calib_cam_to_cam.txt"))
-        print(calibDir)
         P_rectL = cam2cam['P_rect_02'].reshape(3, 4)
         P_rectR = cam2cam['P_rect_03'].reshape(3, 4)
         L_Kmat = cam2cam['K_02'].reshape(3,3)
