@@ -84,15 +84,15 @@ class MyDataset(torch.utils.data.Dataset):
         numTrainDrives = numDrives - numTestDrives - numEvalDrives
         print("num train drives", numTrainDrives)
 
-        raise
         self.dataPathTuples = []     #list of (Limg, Rimg, velo, camDir)
         if type == "train":
-            self.dataPathTuples = allImagePaths[0:numTrain]
+            self.dataPathTuples = [img for drive in allImagesInDrives[0:numTrainDrives] for img in drive]
+            print(len(self.dataPathTuples))
+
         elif type == "test":
-            self.dataPathTuples = allImagePaths[numTrain:numTrain+numTest]
+            self.dataPathTuples = [img for drive in allImagesInDrives[numTestDrives:numTrainDrives+numTestDrives] for img in drive]
         elif type == "eval":
-            self.dataPathTuples = allImagePaths[numTrain+numTest:]
-        #print(f"retrieved {numImages} image/velo tuples using {len(self.dataPathTuples)} for {type}")
+            self.dataPathTuples = [img for drive in allImagesInDrives[numTrainDrives+numTestDrives:] for img in drive]
 
     def getCalibInfo(self, calibDir):
         #retrive calibration data
