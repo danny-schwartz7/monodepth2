@@ -13,6 +13,8 @@ def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : to
     print("disparity size:", disparity.size())
     print("focal length size:", focalLength.size())
     print("baseline size:", baseline.size())
+    baseFocal = (baseline.to(DEVICE) * focalLength.to(DEVICE))
+    print("basefocal shape", baseFocal.size())
     depth = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(disparity+EPSILON).to(DEVICE)
     return depth
 
