@@ -60,7 +60,7 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
     imgL, depth_gtL, focal_length, baseline = tup.imgL, tup.depthL, tup.focalLength, tup.baseline
 
     imgL = imgL.to(DEVICE) #imgL is actually a batch of N images - size (N,C,H,W)
-    depth_gtL = depth_gtL.to(DEVICE) #imgL is actually a batch of N depths - size (N,C,H,W)
+    depth_gtL = depth_gtL.to(DEVICE) #imgL is actually a batch of N depths - size (N,H,W)
     focal_length = focal_length.to(DEVICE) #actually N focal_lengths
     baseline = baseline.to(DEVICE) #actually N baselines
 
