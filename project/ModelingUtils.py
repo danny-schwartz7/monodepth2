@@ -50,7 +50,7 @@ def unsupervised_multi_scale_loss(tup: Data_Tuple, model: nn.Module, return_indi
     disp_maps = model.forward(left_img)
     return unsupervised_multiscale_monodepth_loss(stereo_pair, disp_maps, return_individual_losses=return_individual_losses)
 
-def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.model):
+def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
     left_img = tup.imgL
     left_img = left_img.to(DEVICE)
     disp_maps = model.forward(left_img)
