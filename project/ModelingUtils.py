@@ -114,9 +114,9 @@ def train(train_loader: torch.utils.data.DataLoader,
             num_train_examples += examples_in_batch
             train_tbx_idx += examples_in_batch
             if num_train_examples > TRAIN_REPORT_INTERVAL:
-                print(running_loss / num_train_examples)
+                print("run div num train : ", running_loss / num_train_examples)
                 running_loss /= num_train_examples
-                print(running_loss)
+                print("/= version: ", running_loss)
                 tbx_writer.add_scalar("train/loss", running_loss, train_tbx_idx)
 
                 running_recon_loss /= num_train_examples
