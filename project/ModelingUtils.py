@@ -98,16 +98,17 @@ def train(train_loader: torch.utils.data.DataLoader,
             examples_in_batch = tup.imgL.shape[0]
 
             optimizer.zero_grad()
-            if supervised:
-                total_loss = mono_supervised_MSE_loss(tup, model)
-                running_loss += examples_in_batch * total_loss.item()
+            # if supervised:
+            #     total_loss = mono_supervised_MSE_loss(tup, model)
+            #     running_loss += examples_in_batch * total_loss.item()
                 
-            else:
-                recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
-                running_loss += examples_in_batch * total_loss.item()
-                running_recon_loss += recon_loss.item()
-                running_disp_smooth_loss += disp_smooth_loss.item()
-                running_lr_consistency_loss += lr_consistency_loss.item()
+            
+            #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+            total_loss = mono_supervised_MSE_loss(tup, model)
+            running_loss += examples_in_batch * total_loss.item()
+                # running_recon_loss += recon_loss.item()
+                # running_disp_smooth_loss += disp_smooth_loss.item()
+                # running_lr_consistency_loss += lr_consistency_loss.item()
             
             total_loss.backward()
             optimizer.step()
@@ -142,16 +143,14 @@ def train(train_loader: torch.utils.data.DataLoader,
             model.eval()
             with torch.no_grad():
                 examples_in_batch = tup.imgL.shape[0]
-                if supervised:
-                    total_loss = mono_supervised_MSE_loss(tup, model)
-                    val_loss += examples_in_batch * total_loss.item()
-                else:
-                    recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
-                    val_loss += examples_in_batch * total_loss.item()
+                total_loss = mono_supervised_MSE_loss(tup, model)
+                
+                    #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+                val_loss += examples_in_batch * total_loss.item()
 
-                    val_recon_loss += recon_loss.item()
-                    val_disp_smooth_loss += disp_smooth_loss.item()
-                    val_lr_consistency_loss += lr_consistency_loss.item()
+                    # val_recon_loss += recon_loss.item()
+                    # val_disp_smooth_loss += disp_smooth_loss.item()
+                    # val_lr_consistency_loss += lr_consistency_loss.item()
 
                 total_val_examples += examples_in_batch
         val_loss /= total_val_examples
