@@ -10,11 +10,11 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 EPSILON = 1e-8
 
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(disparity+EPSILON).to(DEVICE)
+    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(disparity+EPSILON).to(DEVICE) #unsqueeze to make same shape as disparity map
     return depth
 
 def to_disparity(depth : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    disparity = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(depth+EPSILON).to(DEVICE)
+    disparity = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(depth+EPSILON).to(DEVICE) #unsqueeze to make same shape as disparity map 
     return disparity
 
 def read_calib_file(path):
@@ -35,9 +35,7 @@ def read_calib_file(path):
 
 def get_dataloader(type : str = "train", fraction_of_data_to_use : float = 1.0, batch_size : int = 1, shuffle : bool = False):
     dataset = MyDataset(type, fraction_of_data_to_use)
-    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size,
-                                         shuffle=shuffle, num_workers=4,
-                                         collate_fn=custom_collate, prefetch_factor=5)
+    loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, collate_fn = custom_collate, num_workers=4, prefetch_factor = 5)
     return loader
 
 def custom_collate(data):
@@ -234,7 +232,7 @@ class MyDataset(torch.utils.data.Dataset):
         #conversion
         convert_tensor = transforms.ToTensor()
         imgL : torch.Tensor = convert_tensor(imgL).float()     #tensor
-        imgR : torch.Tensor = convert_tensor(imgR).float()     #tensor
+        imgR : torch.Tensor = convert_tensor(imgR).float()    #tensor
 
         #check if need to resize
         resizeT = transforms.Resize((375, 1242))
