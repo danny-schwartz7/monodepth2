@@ -58,7 +58,7 @@ def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
 
     gtDepth = tup.depthL.to(DEVICE)
     leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength).to(DEVICE)
-    MSEloss = torch.mean(torch.sum(torch.pow(leftDepth - gtDepth, 2), dim = 0))    #MSQ
+    MSEloss = torch.mean(torch.sum(torch.pow(leftDepth - gtDepth, 2), dim = 0))    #MSE
     return MSEloss
 
 def train(train_loader: torch.utils.data.DataLoader,
