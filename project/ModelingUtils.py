@@ -101,6 +101,7 @@ def train(train_loader: torch.utils.data.DataLoader,
             if supervised:
                 total_loss = mono_supervised_MSE_loss(tup, model)
                 running_loss += examples_in_batch * total_loss.item()
+                print(running_loss)
             else:
                 recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
                 running_loss += examples_in_batch * total_loss.item()
