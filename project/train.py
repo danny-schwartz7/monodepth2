@@ -15,6 +15,7 @@ def get_args():
     parser.add_argument('--initial-lr', type=float, default=1e-4)
     parser.add_argument('--num-epochs', type=int, default=2)
     parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--supervised', type=bool, default=False)
 
     return parser.parse_args()
 
@@ -34,13 +35,14 @@ def main():
 
     train_viz_tup = MyDataset("train")[0]
     val_viz_tup = MyDataset("eval")[0]
-
+    print("args.supervised:", args.supervised)
+    raise
     train_loader = get_dataloader("train", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=0.001)
     val_loader = get_dataloader("eval", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=0.001)
     train(train_loader, val_loader, model,
           args.model_save_dir, args.tbx_log_dir,
           args.initial_lr, args.num_epochs, train_viz_tup=train_viz_tup,
-          val_viz_tup=val_viz_tup)
+          val_viz_tup=val_viz_tup, supervised=args.supervised)
 
 
 if __name__ == "__main__":
