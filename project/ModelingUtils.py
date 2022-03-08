@@ -57,7 +57,7 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
     :param tup: A tuple from the dataloader
     :return: loss
     """
-    imgL, depth_gtL, focal_length, baseline = tup.imgL, tup.depth_gtL, tup.focalLength, tup.baseline
+    imgL, depth_gtL, focal_length, baseline = tup.imgL, tup.depthL, tup.focalLength, tup.baseline
 
     imgL = imgL.to(DEVICE) #imgL is actually a batch of N images - size (N,C,H,W)
     depth_gtL = depth_gtL.to(DEVICE) #imgL is actually a batch of N depths - size (N,C,H,W)
@@ -67,8 +67,19 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
     disp_maps = model.forward(imgL)
     #Get last element of disp_maps (last tuple in the list)
     #That's two maps - left-right and right-left
-    #Convert disparity to depth
+    leftDisp = disp_maps[-1][0]
 
+    #Convert disparity to depth
+    leftDepth = dataset_interface.to_depth(leftDisp, baseline, focal_length).to(DEVICE)
+    leftDepth = torch.abs(leftDepth)
+
+    epsilon = 1e-8
+
+    di = torch.log(torch.add(leftDepth,epsilon)) - torch.log(torch.add(depth_gtL,epsilon))
+    diSquared = torch.pow(di,2)
+    firstTerm = torch.mean(diSquared, dim=0)
+    secondTerm = torch.pow(torch.mean(di, dim=0),2)
+    SILog = torch.mean(firstTerm - secondTerm)
     #Change the below to torch instead of numpy
     '''
     calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
@@ -81,6 +92,7 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
     gt_depth_flat = ground_truth_depth.flatten()
     calc_depth_flat = calculated_depth.flatten()
 
+    Can remove the next two lines
     calc_depth_flat = calc_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
     gt_depth_flat = gt_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
 
@@ -93,10 +105,7 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
 
     #Return mean over SILogs from the batch - tensor of zero dimensions (one value)
 
-    loss = 0;
-
-
-    return loss
+    return SILog
 
 
 def train(train_loader: torch.utils.data.DataLoader,
