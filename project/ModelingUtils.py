@@ -51,6 +51,53 @@ def unsupervised_multi_scale_loss(tup: Data_Tuple, model: nn.Module, return_indi
 
     return unsupervised_multiscale_monodepth_loss(stereo_pair, disp_maps, return_individual_losses=return_individual_losses)
 
+def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
+    """
+
+    :param tup: A tuple from the dataloader
+    :return: loss
+    """
+    imgL, depth_gtL, focal_length, baseline = tup.imgL, tup.depth_gtL, tup.focalLength, tup.baseline
+
+    imgL = imgL.to(DEVICE) #imgL is actually a batch of N images - size (N,C,H,W)
+    depth_gtL = depth_gtL.to(DEVICE) #imgL is actually a batch of N depths - size (N,C,H,W)
+    focal_length = focal_length.to(DEVICE) #actually N focal_lengths
+    baseline = baseline.to(DEVICE) #actually N baselines
+
+    disp_maps = model.forward(imgL)
+    #Get last element of disp_maps (last tuple in the list)
+    #That's two maps - left-right and right-left
+    #Convert disparity to depth
+
+    #Change the below to torch instead of numpy
+    '''
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
+    calculated_depth = calculated_depth.cpu().detach().numpy()
+    calculated_depth = np.abs(calculated_depth)
+    ground_truth_depth = depth_gtL.cpu().detach().numpy()
+
+    epsilon = 1e-8
+
+    gt_depth_flat = ground_truth_depth.flatten()
+    calc_depth_flat = calculated_depth.flatten()
+
+    calc_depth_flat = calc_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+    gt_depth_flat = gt_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+
+    di = np.log(calc_depth_flat + epsilon) - np.log(gt_depth_flat + epsilon)
+    diSquared = di ** 2
+    firstTerm = np.mean(diSquared)
+    secondTerm = (np.mean(di)) ** 2
+    SILog = firstTerm - secondTerm
+    '''
+
+    #Return mean over SILogs from the batch - tensor of zero dimensions (one value)
+
+    loss = 0;
+
+
+    return loss
+
 
 def train(train_loader: torch.utils.data.DataLoader,
             val_loader: torch.utils.data.DataLoader,
@@ -82,20 +129,21 @@ def train(train_loader: torch.utils.data.DataLoader,
 
         num_train_examples = 0
         running_loss = 0
-        running_recon_loss = 0
-        running_disp_smooth_loss = 0
-        running_lr_consistency_loss = 0
+        #running_recon_loss = 0
+        #running_disp_smooth_loss = 0
+        #running_lr_consistency_loss = 0
 
         model.train()
         for tup in tqdm(train_loader, desc=f"Training - Epoch {epoch}", leave=False):
             examples_in_batch = tup.imgL.shape[0]
 
             optimizer.zero_grad()
-            recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+            #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+            total_loss = monocular_silog_loss(tup, model)
             running_loss += examples_in_batch * total_loss.item()
-            running_recon_loss += recon_loss.item()
-            running_disp_smooth_loss += disp_smooth_loss.item()
-            running_lr_consistency_loss += lr_consistency_loss.item()
+            #running_recon_loss += recon_loss.item()
+            #running_disp_smooth_loss += disp_smooth_loss.item()
+            #running_lr_consistency_loss += lr_consistency_loss.item()
             total_loss.backward()
             optimizer.step()
 
@@ -105,50 +153,51 @@ def train(train_loader: torch.utils.data.DataLoader,
                 running_loss /= num_train_examples
                 tbx_writer.add_scalar("train/loss", running_loss, train_tbx_idx)
 
-                running_recon_loss /= num_train_examples
-                tbx_writer.add_scalar("train/reconstruction_loss", running_recon_loss, train_tbx_idx)
+                #running_recon_loss /= num_train_examples
+                #tbx_writer.add_scalar("train/reconstruction_loss", running_recon_loss, train_tbx_idx)
 
-                running_disp_smooth_loss /= num_train_examples
-                tbx_writer.add_scalar("train/disparity_smoothness_loss", running_disp_smooth_loss, train_tbx_idx)
+                #running_disp_smooth_loss /= num_train_examples
+                #tbx_writer.add_scalar("train/disparity_smoothness_loss", running_disp_smooth_loss, train_tbx_idx)
 
-                running_lr_consistency_loss /= num_train_examples
-                tbx_writer.add_scalar("train/lr_consistency_loss", running_lr_consistency_loss, train_tbx_idx)
+                #running_lr_consistency_loss /= num_train_examples
+                #tbx_writer.add_scalar("train/lr_consistency_loss", running_lr_consistency_loss, train_tbx_idx)
 
                 running_loss = 0
-                running_recon_loss = 0
-                running_disp_smooth_loss = 0
-                running_lr_consistency_loss = 0
+                #running_recon_loss = 0
+                #running_disp_smooth_loss = 0
+                #running_lr_consistency_loss = 0
                 num_train_examples = 0
 
         val_loss = 0
-        val_recon_loss = 0
-        val_disp_smooth_loss = 0
-        val_lr_consistency_loss = 0
+        #val_recon_loss = 0
+        #val_disp_smooth_loss = 0
+        #val_lr_consistency_loss = 0
         total_val_examples = 0
         for tup in tqdm(val_loader, desc=f"Validation - Epoch {epoch}", leave=False):
             model.eval()
             with torch.no_grad():
                 examples_in_batch = tup.imgL.shape[0]
 
-                recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+                #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+                total_loss = monocular_silog_loss(tup, model)
                 val_loss += examples_in_batch * total_loss.item()
 
-                val_recon_loss += recon_loss.item()
-                val_disp_smooth_loss += disp_smooth_loss.item()
-                val_lr_consistency_loss += lr_consistency_loss.item()
+                #val_recon_loss += recon_loss.item()
+                #val_disp_smooth_loss += disp_smooth_loss.item()
+                #val_lr_consistency_loss += lr_consistency_loss.item()
 
                 total_val_examples += examples_in_batch
         val_loss /= total_val_examples
         tbx_writer.add_scalar("val/loss", val_loss, epoch)
 
-        val_recon_loss /= total_val_examples
-        tbx_writer.add_scalar("val/reconstruction_loss", val_recon_loss, epoch)
+        #val_recon_loss /= total_val_examples
+        #tbx_writer.add_scalar("val/reconstruction_loss", val_recon_loss, epoch)
 
-        val_disp_smooth_loss /= total_val_examples
-        tbx_writer.add_scalar("val/disparity_smoothness_loss", val_disp_smooth_loss, epoch)
+        #val_disp_smooth_loss /= total_val_examples
+        #tbx_writer.add_scalar("val/disparity_smoothness_loss", val_disp_smooth_loss, epoch)
 
-        val_lr_consistency_loss /= total_val_examples
-        tbx_writer.add_scalar("val/lr_consistency_loss", val_lr_consistency_loss, epoch)
+        #val_lr_consistency_loss /= total_val_examples
+        #tbx_writer.add_scalar("val/lr_consistency_loss", val_lr_consistency_loss, epoch)
 
         torch.save(model, f"{model_savedir}/last.pt")
         if val_loss < best_val_loss:
