@@ -10,6 +10,9 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 EPSILON = 1e-8
 
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
+    print("disparity size:", disparity.size())
+    print("focal length size:", focalLength.size())
+    print("baseline size:", baseline.size())
     depth = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(disparity+EPSILON).to(DEVICE)
     return depth
 
