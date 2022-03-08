@@ -56,7 +56,7 @@ def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
     disp_maps = model.forward(left_img)
     leftDisp = disp_maps[-1][0]
 
-    gtDepth = tup.depthL
+    gtDepth = tup.depthL.to(DEVICE)
     leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength).to(DEVICE)
     MSEloss = torch.mean(torch.sum(torch.pow(leftDepth - gtDepth, 2), dim = 0))    #MSQ
     return MSEloss
