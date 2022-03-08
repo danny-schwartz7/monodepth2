@@ -10,16 +10,11 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 EPSILON = 1e-8
 
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    print("disparity size:", disparity.size())
-    print("focal length size:", focalLength.size())
-    print("baseline size:", baseline.size())
-    baseFocal = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)
-    print("basefocal shape", baseFocal.size())
-    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(disparity+EPSILON).to(DEVICE)
+    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(disparity+EPSILON).to(DEVICE) #unsqueeze to make same shape as disparity map
     return depth
 
 def to_disparity(depth : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    disparity = (baseline.to(DEVICE) * focalLength.to(DEVICE))/(depth+EPSILON).to(DEVICE)
+    disparity = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(depth+EPSILON).to(DEVICE) #unsqueeze to make same shape as disparity map 
     return disparity
 
 def read_calib_file(path):
