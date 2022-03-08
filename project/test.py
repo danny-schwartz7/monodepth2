@@ -11,7 +11,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model-save-dir', type=str, required=True)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--batch-size', type=int, default=20)
 
     parser.add_argument('--visualize-dir', type=str,
                         help="location of directory to save visualized results to")

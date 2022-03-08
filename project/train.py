@@ -14,7 +14,7 @@ def get_args():
     parser.add_argument('--tbx-log-dir', type=str, required=True)
     parser.add_argument('--initial-lr', type=float, default=1e-4)
     parser.add_argument('--num-epochs', type=int, default=2)
-    parser.add_argument('--batch-size', type=int, default=4)
+    parser.add_argument('--batch-size', type=int, default=20)
 
     return parser.parse_args()
 
