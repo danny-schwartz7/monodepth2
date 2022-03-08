@@ -108,13 +108,13 @@ def train(train_loader: torch.utils.data.DataLoader,
                 running_recon_loss += recon_loss.item()
                 running_disp_smooth_loss += disp_smooth_loss.item()
                 running_lr_consistency_loss += lr_consistency_loss.item()
+            
             total_loss.backward()
             optimizer.step()
 
             num_train_examples += examples_in_batch
             train_tbx_idx += examples_in_batch
             if num_train_examples > TRAIN_REPORT_INTERVAL:
-                print("running loss : ", running_loss / num_train_examples)
                 running_loss /= num_train_examples
                 tbx_writer.add_scalar("train/loss", running_loss, train_tbx_idx)
 
