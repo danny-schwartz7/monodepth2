@@ -35,8 +35,6 @@ def main():
 
     train_viz_tup = MyDataset("train")[0]
     val_viz_tup = MyDataset("eval")[0]
-    print("args.supervised:", args.supervised)
-    raise
     train_loader = get_dataloader("train", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=0.001)
     val_loader = get_dataloader("eval", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=0.001)
     train(train_loader, val_loader, model,
