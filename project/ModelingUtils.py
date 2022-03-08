@@ -71,7 +71,6 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
 
     #Convert disparity to depth
     leftDepth = dataset_interface.to_depth(leftDisp, baseline, focal_length).to(DEVICE)
-    leftDepth = torch.abs(leftDepth)
 
     epsilon = 1e-8
 
