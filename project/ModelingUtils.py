@@ -72,8 +72,6 @@ def train(train_loader: torch.utils.data.DataLoader,
             train_viz_tup: Optional[Tuple] = None,
             val_viz_tup: Optional[Tuple] = None):
 
-    if supervised:
-        raise NotImplementedError("Implement this later!")
 
     model = model.to(DEVICE)
     model.train()
