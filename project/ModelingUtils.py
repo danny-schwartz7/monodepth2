@@ -83,8 +83,8 @@ def train(train_loader: torch.utils.data.DataLoader,
 
     optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.95)
-
+    #lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.95)
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs, eta_min=0, last_epoch=- 1, verbose=False)
     train_tbx_idx = 0
     for epoch in tqdm(range(num_epochs)):
         tbx_writer.add_scalar("lr/lr", lr_scheduler.get_lr()[0], train_tbx_idx)
