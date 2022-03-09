@@ -10,6 +10,8 @@ import dataset_interface
 from dataset_interface import Data_Tuple
 from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupervised_monodepth_loss, unsupervised_multiscale_monodepth_loss
 
+import pdb
+
 TRAIN_REPORT_INTERVAL = 50
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
@@ -111,6 +113,7 @@ def train(train_loader: torch.utils.data.DataLoader,
                 # running_lr_consistency_loss += lr_consistency_loss.item()
             
             total_loss.backward()
+            pdb.set_trace()
             optimizer.step()
 
             num_train_examples += examples_in_batch
