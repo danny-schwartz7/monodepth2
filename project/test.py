@@ -23,7 +23,7 @@ def main():
     args = get_args()
 
     model = torch.load(f"{args.model_save_dir}/best.pt")
-    test_loader = get_dataloader("test", batch_size=args.batch_size, shuffle=False, fraction_of_data_to_use=0.005)
+    test_loader = get_dataloader("test", batch_size=args.batch_size, shuffle=False, fraction_of_data_to_use=1)
     test(test_loader, model)
 
     # TODO: Parker's new data-tuple arrangement invalidated the following code, we should fix it at some point
