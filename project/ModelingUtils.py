@@ -114,7 +114,7 @@ def train(train_loader: torch.utils.data.DataLoader,
             
             total_loss.backward()
             optimizer.step()
-            pdb.set_trace()
+            #pdb.set_trace()
 
             num_train_examples += examples_in_batch
             train_tbx_idx += examples_in_batch
