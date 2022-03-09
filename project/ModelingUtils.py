@@ -113,8 +113,8 @@ def train(train_loader: torch.utils.data.DataLoader,
                 # running_lr_consistency_loss += lr_consistency_loss.item()
             
             total_loss.backward()
-            pdb.set_trace()
             optimizer.step()
+            pdb.set_trace()
 
             num_train_examples += examples_in_batch
             train_tbx_idx += examples_in_batch
