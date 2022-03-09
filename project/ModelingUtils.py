@@ -57,14 +57,16 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
     :param tup: A tuple from the dataloader
     :return: loss
     """
-    imgL, depth_gtL, focal_length, baseline = tup.imgL, tup.depthL, tup.focalLength, tup.baseline
+    imgL, imgR, depth_gtL, focal_length, baseline = tup.imgL, tup.imgR, tup.depthL, tup.focalLength, tup.baseline
 
     imgL = imgL.to(DEVICE) #imgL is actually a batch of N images - size (N,C,H,W)
+    imgR = imgR.to(DEVICE)  # imgL is actually a batch of N images - size (N,C,H,W)
+    stereo_images = torch.stack(imgL,imgR,dim=1)
     depth_gtL = depth_gtL.to(DEVICE) #imgL is actually a batch of N depths - size (N,H,W)
     focal_length = focal_length.to(DEVICE) #actually N focal_lengths
     baseline = baseline.to(DEVICE) #actually N baselines
 
-    disp_maps = model.forward(imgL)
+    disp_maps = model.forward(stereo_images)
     #Get last element of disp_maps (last tuple in the list)
     #That's two maps - left-right and right-left
     leftDisp = disp_maps[-1][0]
