@@ -35,7 +35,7 @@ def main():
 
     train_viz_tup = MyDataset("train")[0]
     val_viz_tup = MyDataset("eval")[0]
-    train_loader = get_dataloader("train", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=1)
+    train_loader = get_dataloader("train", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=1) #doubt
     val_loader = get_dataloader("eval", batch_size=args.batch_size, shuffle=True, fraction_of_data_to_use=1)
     train(train_loader, val_loader, model,
           args.model_save_dir, args.tbx_log_dir,
