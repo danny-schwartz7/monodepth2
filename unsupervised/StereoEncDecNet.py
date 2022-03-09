@@ -39,7 +39,6 @@ class StereoEncDecNet(nn.Module):
             Each tuple in the list corresponds to a different output scale. The list is ordered with
             ascending resolution (more granular predictions are toward the end of the list).
         """
-        print("Passing tensor of shape ", x.shape)
         # use a deque to implement skip connections
         skip_tensor_deque = deque()
 
