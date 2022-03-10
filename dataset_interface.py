@@ -207,6 +207,9 @@ class MyDataset(torch.utils.data.Dataset):
             numToUse = int(numImagesInDrive * frac_to_use)
             if numToUse < 1:
                 numToUse = 1
+            
+            #HACK FOR TESTING
+            numToUse = 2
             #print(f"num to use: {len(driveImages[:numToUse])}")
 
             totalImages += [driveImages[:numToUse]]
