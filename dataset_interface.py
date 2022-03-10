@@ -10,7 +10,7 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 EPSILON = 1e-8
 
 def to_depth(disparity : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
-    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(disparity+EPSILON).to(DEVICE) #unsqueeze to make same shape as disparity map
+    depth = (baseline.to(DEVICE) * focalLength.to(DEVICE)).unsqueeze(-1)/(disparity+EPSILON) #unsqueeze to make same shape as disparity map
     return depth
 
 def to_disparity(depth : torch.Tensor, baseline : torch.Tensor, focalLength : torch.Tensor) -> torch.Tensor:
