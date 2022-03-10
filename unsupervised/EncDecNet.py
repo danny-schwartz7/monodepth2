@@ -7,7 +7,7 @@ from collections import deque
 from unsupervised.Blocks import ConvElu, UpConvElu, Reshaper, ResConv, UpsampleAndSmooth
 
 #MAX_DISP_FRAC = 0.3  # from the paper
-MAX_DISP_FRAC = 1.0
+MAX_DISP_FRAC = 0.5
 
 class EncDecNet(nn.Module):
     # take the place of the bowtie-looking thing in the diagrams of https://arxiv.org/pdf/1609.03677.pdf
