@@ -54,11 +54,11 @@ def unsupervised_multi_scale_loss(tup: Data_Tuple, model: nn.Module, return_indi
 
 def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
     left_img = tup.imgL
-    left_img = left_img.to(DEVICE)
+    left_img = left_img
     disp_maps = model.forward(left_img)
     leftDisp = disp_maps[-1][0] #last left image
 
-    gtDepth = tup.depthL.to(DEVICE)
+    gtDepth = tup.depthL
     leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength)
     MSEloss = torch.mean(torch.sum(torch.pow(leftDepth - gtDepth, 2), dim = 0))    #MSE
     return MSEloss
