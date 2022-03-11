@@ -249,20 +249,11 @@ class MyDataset(torch.utils.data.Dataset):
             #print("new RSize:", imgR.size())
 
         #normalize
-        Lmeans = torch.mean(imgL, dim=0)
-        mean0L = imgL-Lmeans
-        print(mean0L.size())
-        Rmeans = torch.mean(imgR, dim=0)
-        Lstds = torch.Tensor([torch.std(imgL[0]), torch.std(imgL[1]), torch.std(imgL[2])])
-        
-        Rmean, Rstd = torch.std_mean(imgR)
-        print(Lstds)
-        Lnormalizer = transforms.Normalize(Lmeans, Lstds)
-        #Rnormalizer = transforms.Normalize(Rmeans, Rstds)
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225],
+        normalizer = transforms.Normalize(mean, std)
         print("imgL mean before", torch.mean(imgL[0]), torch.std(imgL[0]))
-        mean0L = imgL-Lmeans
-        imgL = mean0L/Lstds
-        #imgR = Rnormalizer(imgR)
+        imgL = normalizer(imgL)
         print("imgL mean after", torch.mean(imgL[0]), torch.std(imgL[0]))
         raise
         #retrieve depth data
