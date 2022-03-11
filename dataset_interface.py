@@ -251,6 +251,7 @@ class MyDataset(torch.utils.data.Dataset):
         #normalize
         Lmeans = torch.mean(imgL, dim=0)
         mean0L = imgL-Lmeans
+        print(mean0L.size())
         Rmeans = torch.mean(imgR, dim=0)
         Lstds = torch.Tensor([torch.std(imgL[0]), torch.std(imgL[1]), torch.std(imgL[2])])
         
