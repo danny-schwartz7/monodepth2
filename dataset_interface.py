@@ -251,10 +251,10 @@ class MyDataset(torch.utils.data.Dataset):
         #normalize
         Lmeans = torch.mean(imgL, dim=0)
         Rmeans = torch.mean(imgR, dim=0)
-        Lstd = torch.std(imgL)
+        Lstds = [torch.std(imgL[0]), torch.std(imgL[1]), torch.std(imgL[2])]
         Rmean, Rstd = torch.std_mean(imgR)
-        print(Lstd)
-        Lnormalizer = transforms.Normalize(Lmeans, [Lstd, Lstd, Lstd])
+        print(Lstds)
+        Lnormalizer = transforms.Normalize(Lmeans, Lstds)
         #Rnormalizer = transforms.Normalize(Rmeans, Rstds)
         print("imgL mean before", torch.mean(imgL[0]), torch.std(imgL[0]))
         imgLNew = Lnormalizer(imgL)
