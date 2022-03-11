@@ -251,7 +251,7 @@ class MyDataset(torch.utils.data.Dataset):
         #normalize
         normalizer = transforms.Normalize([0, 0, 0], [1, 1, 1], inplace=True)
         print("imgL mean before", torch.mean(imgL[0]))
-        imgLNew = normalizer(imgL)
+        imgLNew = normalizer.forward(imgL)
         imgR = normalizer(imgR)
         print("imgL mean after", torch.mean(imgLNew[0]))
         raise
