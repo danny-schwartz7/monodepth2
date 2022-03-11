@@ -60,6 +60,7 @@ def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
 
     gtDepth = tup.depthL.to(DEVICE)
     leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength)
+    print("avg depth of output image:", torch.mean(leftDepth))
     MSEloss = torch.mean(torch.pow(leftDepth - gtDepth, 2))    #MSE
     return MSEloss
 
