@@ -248,6 +248,13 @@ class MyDataset(torch.utils.data.Dataset):
             imgR = resizeT(imgR)
             #print("new RSize:", imgR.size())
 
+        #normalize
+        normalizer = transforms.Normalize([0, 0, 0], [1, 1, 1], inplace=False)
+        print("imgL mean before", torch.mean(imgL))
+        imgL = normalizer(imgL)
+        imgR = normalizer(imgR)
+        print("imgL mean after", torch.mean(imgL))
+        raise
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
         depth_gtR = generate_depth_map(calibDir, velo_filename=veloPath, cam = 3)
