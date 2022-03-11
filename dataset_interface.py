@@ -250,16 +250,19 @@ class MyDataset(torch.utils.data.Dataset):
 
         #normalize
         Lmeans = torch.mean(imgL, dim=0)
+        mean0L = imgL-Lmeans
         Rmeans = torch.mean(imgR, dim=0)
         Lstds = [torch.std(imgL[0]), torch.std(imgL[1]), torch.std(imgL[2])]
+        
         Rmean, Rstd = torch.std_mean(imgR)
         print(Lstds)
         Lnormalizer = transforms.Normalize(Lmeans, Lstds)
         #Rnormalizer = transforms.Normalize(Rmeans, Rstds)
         print("imgL mean before", torch.mean(imgL[0]), torch.std(imgL[0]))
-        imgLNew = Lnormalizer(imgL)
+        mean0L = imgL-Lmeans
+        imgL = mean0L/Lstds
         #imgR = Rnormalizer(imgR)
-        print("imgL mean after", torch.mean(imgLNew[0]), torch.std(imgLNew[0]))
+        print("imgL mean after", torch.mean(imgL[0]), torch.std(imgL[0]))
         raise
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
