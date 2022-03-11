@@ -252,7 +252,7 @@ class MyDataset(torch.utils.data.Dataset):
         Lmeans = torch.mean(imgL, dim=0)
         mean0L = imgL-Lmeans
         Rmeans = torch.mean(imgR, dim=0)
-        Lstds = [torch.std(imgL[0]), torch.std(imgL[1]), torch.std(imgL[2])]
+        Lstds = torch.Tensor([torch.std(imgL[0]), torch.std(imgL[1]), torch.std(imgL[2])])
         
         Rmean, Rstd = torch.std_mean(imgR)
         print(Lstds)
