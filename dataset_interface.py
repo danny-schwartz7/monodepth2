@@ -251,8 +251,8 @@ class MyDataset(torch.utils.data.Dataset):
         #normalize
         Lmeans = torch.mean(imgL, dim=0)
         Rmeans = torch.mean(imgR, dim=0)
-        Lstds = torch.std(imgL, dim=0)
-        Rstds = torch.std(imgR, dim=0)
+        Lstds = torch.std(imgL, dim=(2,3))
+        Rstds = torch.std(imgR, dim=(2,3))
         print(Lstds, Rstds)
         Lnormalizer = transforms.Normalize(Lmeans, Lstds)
         Rnormalizer = transforms.Normalize(Rmeans, Rstds)
