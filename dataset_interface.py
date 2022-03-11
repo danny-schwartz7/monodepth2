@@ -254,6 +254,7 @@ class MyDataset(torch.utils.data.Dataset):
         normalizer = transforms.Normalize(mean, std)
         print("imgL mean before", torch.mean(imgL[0]), torch.std(imgL[0]))
         imgL = normalizer(imgL)
+        imgR = normalizer(imgR)
         print("imgL mean after", torch.mean(imgL[0]), torch.std(imgL[0]))
         raise
         #retrieve depth data
