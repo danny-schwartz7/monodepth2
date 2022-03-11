@@ -249,14 +249,14 @@ class MyDataset(torch.utils.data.Dataset):
             #print("new RSize:", imgR.size())
 
         #normalize
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225],
-        normalizer = transforms.Normalize(mean, std)
-        print("imgL mean before", torch.mean(imgL[0]), torch.std(imgL[0]))
-        imgL = normalizer(imgL)
-        imgR = normalizer(imgR)
-        print("imgL mean after", torch.mean(imgL[0]), torch.std(imgL[0]))
-        raise
+        # mean=[0.485, 0.456, 0.406],
+        # std=[0.229, 0.224, 0.225],
+        # normalizer = transforms.Normalize(mean, std)
+        # print("imgL mean before", torch.mean(imgL[0]), torch.std(imgL[0]))
+        # imgL = normalizer(imgL)
+        # imgR = normalizer(imgR)
+        # print("imgL mean after", torch.mean(imgL[0]), torch.std(imgL[0]))
+        
         #retrieve depth data
         depth_gtL = generate_depth_map(calibDir, velo_filename=veloPath, cam = 2)
         depth_gtR = generate_depth_map(calibDir, velo_filename=veloPath, cam = 3)
