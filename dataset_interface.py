@@ -249,7 +249,7 @@ class MyDataset(torch.utils.data.Dataset):
             #print("new RSize:", imgR.size())
 
         #normalize
-        normalizer = transforms.Normalize([0, 0, 0], [1, 1, 1], inplace=False)
+        normalizer = transforms.Normalize([0, 0, 0], [1, 1, 1], inplace=True)
         print("imgL mean before", torch.mean(imgL))
         imgLNew = normalizer(imgL)
         imgR = normalizer(imgR)
