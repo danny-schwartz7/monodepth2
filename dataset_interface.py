@@ -141,8 +141,7 @@ class MyDataset(torch.utils.data.Dataset):
         totalImages = []
         for driveFolder in driveFolders:
             driveImages = []
-            calibDir = driveFolder.split("\\")[1]
-            #calibDir = driveFolder.split("/")[1]
+            calibDir = driveFolder.split("/")[1]
             calibDir = os.path.join(self.basedir, calibDir)
             
             #find 02 images
