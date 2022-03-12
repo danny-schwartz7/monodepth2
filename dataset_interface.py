@@ -141,7 +141,8 @@ class MyDataset(torch.utils.data.Dataset):
         totalImages = []
         for driveFolder in driveFolders:
             driveImages = []
-            calibDir = driveFolder.split("/")[1]
+            calibDir = driveFolder.split("\\")[1]
+            #calibDir = driveFolder.split("/")[1]
             calibDir = os.path.join(self.basedir, calibDir)
             
             #find 02 images
@@ -208,10 +209,6 @@ class MyDataset(torch.utils.data.Dataset):
             if numToUse < 1:
                 numToUse = 1
             
-            #HACK FOR TESTING
-            numToUse = 2
-            #print(f"num to use: {len(driveImages[:numToUse])}")
-
             totalImages += [driveImages[:numToUse]]
         return totalImages
 
