@@ -7,6 +7,7 @@ from tensorboardX import SummaryWriter
 from matplotlib import pyplot as plt
 from typing import Optional, Tuple
 
+from project.RunningLossTracker import RunningLossTracker
 from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
 import dataset_interface
 from dataset_interface import Data_Tuple
@@ -14,6 +15,38 @@ from unsupervised.MonodepthUtils import reconstruct_input_from_disp_maps, unsupe
 
 TRAIN_REPORT_INTERVAL = 50
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+
+SUPERVISED_LOSS_WEIGHT = 1e-1
+SEPT_28_FOCAL_LEN = 0.7704891562461853
+
+
+def mono_semisupervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
+    # only use loss for examples where focal_length == 0.7705, else loss component is 0
+
+    left_img = tup.imgL
+    left_img = left_img.to(DEVICE)
+    disp_maps = model.forward(left_img)
+    leftDisp = disp_maps[-1][0]
+
+    gtDepth = tup.depthL.to(DEVICE)
+    leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength).to(DEVICE)
+
+    se_batched = torch.pow(leftDepth - gtDepth, 2)
+
+    depth_mask = torch.where(gtDepth != 0, torch.ones_like(gtDepth).to(DEVICE), torch.zeros_like(gtDepth).to(DEVICE)).to(DEVICE)
+    se_batched = se_batched * depth_mask
+    mse_batched = torch.sum(se_batched, dim=(1, 2))/torch.sum(depth_mask, dim=(1, 2))
+
+    supervision_mask = torch.where(tup.focalLength.reshape((-1,)).to(DEVICE) == SEPT_28_FOCAL_LEN,
+                                   torch.ones_like(mse_batched).to(DEVICE), torch.zeros_like(mse_batched).to(DEVICE)).to(DEVICE)
+    mse_batched = mse_batched * supervision_mask
+
+    if torch.sum(supervision_mask) == 0:
+        # avoid dividing by 0
+        return torch.sum(supervision_mask)
+    mse_loss = torch.sum(mse_batched)/torch.sum(supervision_mask)
+    return mse_loss
 
 
 def unsupervised_single_scale_loss(tup: Data_Tuple, model: nn.Module, return_individual_losses: bool = False):
@@ -68,6 +101,8 @@ def train(train_loader: torch.utils.data.DataLoader,
     if supervised:
         raise NotImplementedError("Implement this later!")
 
+    assert train_viz_tup[5] != 0.7705, "Train viz tup is from supervised drive (9/28), it shouldn't be"
+
     model = model.to(DEVICE)
     model.train()
     best_val_loss = float("inf")
@@ -78,79 +113,88 @@ def train(train_loader: torch.utils.data.DataLoader,
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.95)
 
+    def train_ingestor(loss_dict):
+        out_dict = {}
+        for key in loss_dict.keys():
+            out_dict[f"train/{key}"] = loss_dict[key]
+        return out_dict
+
+    train_tracker = RunningLossTracker(
+        tbx_writer,
+        ingestor=train_ingestor
+    )
+
     train_tbx_idx = 0
     for epoch in tqdm(range(num_epochs)):
         tbx_writer.add_scalar("lr/lr", lr_scheduler.get_lr()[0], train_tbx_idx)
 
         num_train_examples = 0
-        running_loss = 0
-        running_recon_loss = 0
-        running_disp_smooth_loss = 0
-        running_lr_consistency_loss = 0
+        num_supervision_batches = 0
+        running_supervision_loss = 0
 
         model.train()
         for tup in tqdm(train_loader, desc=f"Training - Epoch {epoch}", leave=False):
             examples_in_batch = tup.imgL.shape[0]
 
             optimizer.zero_grad()
-            recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
-            running_loss += examples_in_batch * total_loss.item()
-            running_recon_loss += recon_loss.item()
-            running_disp_smooth_loss += disp_smooth_loss.item()
-            running_lr_consistency_loss += lr_consistency_loss.item()
+            #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
+            unsup_loss_dict = unsupervised_multi_scale_loss(tup, model, True)
+            total_loss = unsup_loss_dict["loss"]
+
+            train_tracker.ingest(unsup_loss_dict, examples_in_batch, examples_in_batch)
+
+            # semisup_loss = mono_semisupervised_MSE_loss(tup, model)
+
+            # if semisup_loss != 0:
+            #     running_supervision_loss += semisup_loss.item()
+            #     num_supervision_batches += 1
+
+            # total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
+
             total_loss.backward()
             optimizer.step()
 
             num_train_examples += examples_in_batch
             train_tbx_idx += examples_in_batch
             if num_train_examples > TRAIN_REPORT_INTERVAL:
-                running_loss /= num_train_examples
-                tbx_writer.add_scalar("train/loss", running_loss, train_tbx_idx)
+                train_tracker.log(train_tbx_idx)
 
-                running_recon_loss /= num_train_examples
-                tbx_writer.add_scalar("train/reconstruction_loss", running_recon_loss, train_tbx_idx)
+                if num_supervision_batches > 0:
+                    running_supervision_loss /= num_supervision_batches
+                    tbx_writer.add_scalar("train/supervised_loss_component", running_supervision_loss, train_tbx_idx)
 
-                running_disp_smooth_loss /= num_train_examples
-                tbx_writer.add_scalar("train/disparity_smoothness_loss", running_disp_smooth_loss, train_tbx_idx)
-
-                running_lr_consistency_loss /= num_train_examples
-                tbx_writer.add_scalar("train/lr_consistency_loss", running_lr_consistency_loss, train_tbx_idx)
-
-                running_loss = 0
-                running_recon_loss = 0
-                running_disp_smooth_loss = 0
-                running_lr_consistency_loss = 0
+                running_supervision_loss = 0
                 num_train_examples = 0
+                num_supervision_batches = 0
 
         val_loss = 0
-        val_recon_loss = 0
-        val_disp_smooth_loss = 0
-        val_lr_consistency_loss = 0
         total_val_examples = 0
+
+        def val_ingest(loss_dict):
+            out_dict = {}
+
+            for key in loss_dict.keys():
+                out_dict[f"val/{key}"] = loss_dict[key]
+
+            return out_dict
+
+        val_tracker = RunningLossTracker(tbx_writer, val_ingest)
+
         for tup in tqdm(val_loader, desc=f"Validation - Epoch {epoch}", leave=False):
             model.eval()
             with torch.no_grad():
                 examples_in_batch = tup.imgL.shape[0]
 
-                recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
-                val_loss += examples_in_batch * total_loss.item()
+                unsup_loss_dict = unsupervised_multi_scale_loss(tup, model, True)
+                val_loss += examples_in_batch * unsup_loss_dict["loss"].item()
 
-                val_recon_loss += recon_loss.item()
-                val_disp_smooth_loss += disp_smooth_loss.item()
-                val_lr_consistency_loss += lr_consistency_loss.item()
+                # don't use supervision in validation set?
+                val_tracker.ingest(unsup_loss_dict, examples_in_batch, examples_in_batch)
 
                 total_val_examples += examples_in_batch
+        val_tracker.log(epoch)
+
         val_loss /= total_val_examples
-        tbx_writer.add_scalar("val/loss", val_loss, epoch)
-
-        val_recon_loss /= total_val_examples
-        tbx_writer.add_scalar("val/reconstruction_loss", val_recon_loss, epoch)
-
-        val_disp_smooth_loss /= total_val_examples
-        tbx_writer.add_scalar("val/disparity_smoothness_loss", val_disp_smooth_loss, epoch)
-
-        val_lr_consistency_loss /= total_val_examples
-        tbx_writer.add_scalar("val/lr_consistency_loss", val_lr_consistency_loss, epoch)
 
         torch.save(model, f"{model_savedir}/last.pt")
         if val_loss < best_val_loss:

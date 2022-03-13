@@ -1,6 +1,6 @@
 import argparse
 import os
-from torch.utils.data import DataLoader
+import torch
 
 from unsupervised.EncDecNet import EncDecNet
 from project.ModelingUtils import train
@@ -16,6 +16,9 @@ def get_args():
     parser.add_argument('--num-epochs', type=int, default=2)
     parser.add_argument('--batch-size', type=int, default=20)
 
+    parser.add_argument('--model-load-dir', type=str, required=False)
+    parser.add_argument('--data-frac', type=float, default=1.0)
+
     return parser.parse_args()
 
 
@@ -30,13 +33,21 @@ def main():
     make_dir_if_not_exists(args.model_save_dir)
     make_dir_if_not_exists(args.tbx_log_dir)
 
-    model = EncDecNet()
+    if args.model_load_dir is not None:
+        model_load_path = f"{args.model_load_dir}/best.pt"
+        if os.path.exists(model_load_path):
+            model = torch.load(model_load_path)
+        else:
+            print(f"WARNING: file '{model_load_path}' not found, using freshly initialized model weights")
+            model = EncDecNet()
+    else:
+        model = EncDecNet()
 
     train_viz_tup = MyDataset("train")[0]
     val_viz_tup = MyDataset("eval")[0]
 
-    train_loader = get_dataloader("train", batch_size=args.batch_size, shuffle=True)
-    val_loader = get_dataloader("eval", batch_size=args.batch_size, shuffle=True)
+    train_loader = get_dataloader("train", fraction_of_data_to_use=args.data_frac, batch_size=args.batch_size, shuffle=True)
+    val_loader = get_dataloader("eval", fraction_of_data_to_use=args.data_frac, batch_size=args.batch_size, shuffle=True)
     train(train_loader, val_loader, model,
           args.model_save_dir, args.tbx_log_dir,
           args.initial_lr, args.num_epochs, train_viz_tup=train_viz_tup,

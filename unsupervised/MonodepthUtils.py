@@ -95,6 +95,8 @@ def unsupervised_multiscale_monodepth_loss(
     :return:
     """
 
+    loss_dict = {}
+
     total_loss = 0
 
     left_image, right_image = stereo_pair
@@ -107,13 +109,20 @@ def unsupervised_multiscale_monodepth_loss(
         resized_right_image = F.interpolate(left_image, size=target_shape, mode='bilinear')
 
         recons = reconstruct_input_from_disp_maps((resized_left_image, resized_right_image), disparity_pair)
-        total_loss += unsupervised_monodepth_loss(
+        scale_rec_loss, scale_disp_loss, scale_lr_loss = unsupervised_monodepth_loss(
             (resized_left_image, resized_right_image),
             disparity_pair,
             recons,
-            disp_smoothness_weight=0.1/(2 ** (3-i)),
-            return_individual_losses=False
+            disp_smoothness_weight=10 * 0.1/(2 ** (3-i)),
+            return_individual_losses=True
         )
+        # TODO: observe visual differences of just trying to minimize recon loss
+        total_loss += scale_rec_loss # + scale_disp_loss + scale_lr_loss
+        scale_str = f"1/{2 ** (3 - i)}-scale"
+        loss_dict[f"recon_loss_{scale_str}"] = scale_rec_loss
+        loss_dict[f"disp_smoothness_loss_{scale_str}"] = scale_disp_loss
+        loss_dict[f"lr_consistency_loss_{scale_str}"] = scale_lr_loss
+        loss_dict[f"total_loss_{scale_str}"] = scale_rec_loss + scale_disp_loss + scale_lr_loss
 
     # now compute loss for the largest scale
     disp_maps = predicted_disparities[-1]
@@ -126,8 +135,18 @@ def unsupervised_multiscale_monodepth_loss(
         return_individual_losses=True
     )
     total_loss += recon_loss + disp_smooth_loss + lr_consistency_loss
+
+    scale_str = f"full-scale"
+    loss_dict[f"recon_loss_{scale_str}"] = recon_loss
+    loss_dict[f"disp_smoothness_loss_{scale_str}"] = disp_smooth_loss
+    loss_dict[f"lr_consistency_loss_{scale_str}"] = lr_consistency_loss
+    loss_dict[f"total_loss_{scale_str}"] = recon_loss + disp_smooth_loss + lr_consistency_loss
+
+    # total loss we optimize on
+    loss_dict["loss"] = total_loss
+
     if return_individual_losses:
-        return recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss
+        return loss_dict
     else:
         return total_loss
 
@@ -135,8 +154,8 @@ def unsupervised_multiscale_monodepth_loss(
 def reconstruction_loss(img1: torch.Tensor, img2: torch.Tensor, alpha: float):
     ssim = ssim_loss(img1, img2, max_val=1.0, window_size=3, reduction="none", padding="valid")
 
-    return alpha*0.5*torch.sum(torch.mean((1-ssim), dim=0)) +\
-                (1 - alpha)*torch.sum(torch.mean(torch.abs(img1 - img2), dim=0))
+    return alpha*0.5*torch.mean(torch.mean((1-ssim), dim=0)) +\
+                (1 - alpha)*torch.mean(torch.abs(img1 - img2))
 
 
 def disp_smoothness_loss(img: torch.Tensor,
@@ -151,7 +170,7 @@ def disp_smoothness_loss(img: torch.Tensor,
     img_grady_l1 = torch.sum(torch.abs(img_grady), dim=1)
 
     loss = torch.abs(disp_gradx)*torch.exp(-1*img_gradx_l1) + torch.abs(disp_grady)*torch.exp(-1*img_grady_l1)
-    loss = torch.sum(torch.mean(loss, dim=0))
+    loss = torch.mean(loss)
     return loss
 
 
@@ -183,14 +202,13 @@ def lr_disp_consistency_loss(disp1: torch.Tensor, disp2: torch.Tensor, left_to_r
     projected_disp2 = F.grid_sample(disp2, grid)
 
     loss = torch.abs(disp1 - projected_disp2)
-    loss = torch.sum(torch.mean(loss, dim=0))
+    loss = torch.mean(loss)
     return loss
 
 
 def disp_to_grid(disp: torch.Tensor, left_to_right: bool):
     batch_size, height, width = disp.shape
 
-    # TODO: I just changed this, is it correct?
     disp_direction_multiplier = -1  # should be 1 if changing views moves pixels right, else -1 b/c changing views moves pixels left
     if left_to_right:
         disp_direction_multiplier = 1
