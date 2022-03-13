@@ -89,6 +89,12 @@ def data_tuple_to_plt_image(tup):
     plt.axis('off')
     plt.title("Left Image")
 
+    left_depth_gt_nonzero = left_depth_gt_np[left_depth_gt_np.nonzero(as_tuple=True)]
+    left_depth_gt_np_mean = np.mean(left_depth_gt_nonzero)
+    left_depth_gt_np = left_depth_gt_np + left_depth_gt_np - left_depth_gt_np_mean
+    left_depth_gt_np[(left_depth_gt_np < 0)] = 0
+    left_depth_gt_np[(left_depth_gt_np > 255)] = 255
+
     fig.add_subplot(rows, cols, 2)
     plt.imshow(left_depth_gt_np)  # TODO: use cmap?
     plt.axis('off')
@@ -98,6 +104,12 @@ def data_tuple_to_plt_image(tup):
     plt.imshow(right_image_np)
     plt.axis('off')
     plt.title("Right Image")
+
+    right_depth_gt_nonzero = right_depth_gt_np[right_depth_gt_np.nonzero(as_tuple=True)]
+    right_depth_gt_np_mean = np.mean(right_depth_gt_nonzero)
+    right_depth_gt_np = right_depth_gt_np + right_depth_gt_np - left_depth_gt_np_mean
+    right_depth_gt_np[(right_depth_gt_np < 0)] = 0
+    right_depth_gt_np[(right_depth_gt_np > 255)] = 255
 
     fig.add_subplot(rows, cols, 4)
     plt.imshow(right_depth_gt_np)  # TODO: use cmap?

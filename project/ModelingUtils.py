@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 from tqdm import tqdm
@@ -311,6 +312,12 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.imshow(left_image_np)
     plt.axis('off')
     plt.title("Left Image")
+
+    left_depth_gt_nonzero = left_depth_gt_np[left_depth_gt_np.nonzero(as_tuple=True)]
+    left_depth_gt_np_mean = np.mean(left_depth_gt_nonzero)
+    left_depth_gt_np = left_depth_gt_np + left_depth_gt_np - left_depth_gt_np_mean
+    left_depth_gt_np[(left_depth_gt_np < 0)] = 0
+    left_depth_gt_np[(left_depth_gt_np > 255)] = 255
 
     fig.add_subplot(rows, cols, 2)
     plt.imshow(left_depth_gt_np)  # TODO: use cmap?
