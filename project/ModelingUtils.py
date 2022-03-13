@@ -83,7 +83,7 @@ def monocular_silog_loss(tup: Data_Tuple, model: nn.Module):
 
     di = torch.log(torch.add(depth_gtL, epsilon)) - torch.log(torch.add(calc_depth_nonzero, epsilon))
     diSquared = torch.pow(di, 2)
-    firstTerm = torch.div(torch.sum(diSquared, dim=(1, 2)), torch.pow(gt_depth_nonzero_count, 2))
+    firstTerm = torch.div(torch.sum(diSquared, dim=(1, 2)), gt_depth_nonzero_count)
     secondTerm = torch.pow(torch.div(torch.sum(di, dim=(1, 2)), gt_depth_nonzero_count), 2)
     SILog = torch.mean(firstTerm - secondTerm, dim=0)
     #Change the below to torch instead of numpy
