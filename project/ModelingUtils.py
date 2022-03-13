@@ -210,12 +210,18 @@ def train(train_loader: torch.utils.data.DataLoader,
         # visualize examples
         if train_viz_tup is not None:
             with torch.no_grad():
-                fig = data_tuple_to_plt_image(train_viz_tup, model)
+                if stereo:
+                    fig = stereo_data_tuple_to_plt_image(train_viz_tup, model)
+                else:
+                    fig = data_tuple_to_plt_image(train_viz_tup, model)
             tbx_writer.add_figure("train/visualization", fig, epoch)
             plt.close(fig)
         if val_viz_tup is not None:
             with torch.no_grad():
-                fig = data_tuple_to_plt_image(val_viz_tup, model)
+                if stereo:
+                    fig = stereo_data_tuple_to_plt_image(val_viz_tup, model)
+                else:
+                    fig = data_tuple_to_plt_image(val_viz_tup, model)
             tbx_writer.add_figure("val/visualization", fig, epoch)
             plt.close(fig)
 
@@ -267,6 +273,60 @@ def visualize_disparity_maps(data_loader: torch.utils.data.DataLoader, model: nn
         data_tuple_to_plt_image(tup, model)
         plt.savefig(savepath)
         break  # TODO: refactor this to avoid this hacky logic to get access to data
+
+def stereo_data_tuple_to_plt_image(tup, model: nn.Module):
+    """
+    This function still uses the old (length-6 tuple) format based on quirks of Parker's implementation
+    """
+    model.eval()
+
+    tup = convert_tuple_to_batched_if_necessary(tup)
+    left_image, right_image, left_depth_gt, right_depth_gt, _, _ = tup
+    left_image = left_image.to(DEVICE)
+    right_image = right_image.to(DEVICE)
+    stereo_images = torch.cat((left_image, right_image), dim = 1)
+    with torch.no_grad():
+        #left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
+        left_to_right_disp, right_to_left_disp = model.forward(stereo_images)[-1]
+        recons = reconstruct_input_from_disp_maps((left_image, right_image), (left_to_right_disp, right_to_left_disp))
+
+    left_image_np = left_image.permute((0, 2, 3, 1))[0, :, :, :].cpu().detach().numpy()
+    left_disp_np = left_to_right_disp[0, :, :].cpu().detach().numpy()
+    left_depth_gt_np = left_depth_gt[0, :, :].cpu().detach().numpy()
+    left_recon_np = recons[0].permute((0, 2, 3, 1))[0, :, :, :].cpu().detach().numpy()
+
+    fig = plt.figure(figsize=(21, 7))
+
+    rows = 2
+    cols = 2
+
+    fig.add_subplot(rows, cols, 1)
+    plt.imshow(left_image_np)
+    plt.axis('off')
+    plt.title("Left Image")
+
+    left_depth_gt_nonzero = left_depth_gt_np[np.nonzero(left_depth_gt_np)]
+    left_depth_gt_np_mean = np.mean(left_depth_gt_nonzero)
+    left_depth_gt_np = left_depth_gt_np + left_depth_gt_np - left_depth_gt_np_mean
+    left_depth_gt_np[(left_depth_gt_np < 0)] = 0
+    left_depth_gt_np[(left_depth_gt_np > 255)] = 255
+
+    fig.add_subplot(rows, cols, 2)
+    plt.imshow(left_depth_gt_np)  # TODO: use cmap?
+    plt.axis('off')
+    plt.title("Left Ground-Truth Depth")
+
+    fig.add_subplot(rows, cols, 3)
+    plt.imshow(left_recon_np)
+    plt.axis('off')
+    plt.title("Reconstructed Left Image")
+
+    fig.add_subplot(rows, cols, 4)
+    plt.imshow(left_disp_np)  # TODO: use cmap?
+    plt.axis('off')
+    plt.title("Predicted Disparity Map")
+
+    return fig
 
 
 def data_tuple_to_plt_image(tup, model: nn.Module):
