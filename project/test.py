@@ -29,8 +29,8 @@ def main():
     model = torch.load(f"{args.model_save_dir}/best.pt")
     test_loader = get_dataloader("test", batch_size=args.batch_size, shuffle=False)
     print(args.skip_metrics)
-    if args.skip_metrics is None:
-        test(test_loader, model)
+    #if args.skip_metrics is None:
+    test(test_loader, model)
 
     if args.visualize_dir is not None:
         make_dir_if_not_exists(args.visualize_dir)
