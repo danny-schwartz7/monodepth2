@@ -17,7 +17,7 @@ TRAIN_REPORT_INTERVAL = 50
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-SUPERVISED_LOSS_WEIGHT = 1e-1
+SUPERVISED_LOSS_WEIGHT = 1.0
 SEPT_28_FOCAL_LEN = 0.7704891562461853
 
 
@@ -143,13 +143,13 @@ def train(train_loader: torch.utils.data.DataLoader,
 
             train_tracker.ingest(unsup_loss_dict, examples_in_batch, examples_in_batch)
 
-            # semisup_loss = mono_semisupervised_MSE_loss(tup, model)
+            semisup_loss = mono_semisupervised_MSE_loss(tup, model)
 
-            # if semisup_loss != 0:
-            #     running_supervision_loss += semisup_loss.item()
-            #     num_supervision_batches += 1
+            if semisup_loss != 0:
+                running_supervision_loss += semisup_loss.item()
+                num_supervision_batches += 1
 
-            # total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
+            total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
 
             total_loss.backward()
             optimizer.step()
