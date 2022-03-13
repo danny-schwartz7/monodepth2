@@ -221,6 +221,7 @@ def train(train_loader: torch.utils.data.DataLoader,
 
 
 def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
+    print("testing")
     model = model.to(DEVICE)
     model.eval()
 
