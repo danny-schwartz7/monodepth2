@@ -248,7 +248,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.axis('off')
     plt.title("Left Image")
 
-    left_depth_gt_nonzero = left_depth_gt_np[left_depth_gt_np.nonzero(as_tuple=True)]
+    left_depth_gt_nonzero = left_depth_gt_np[np.nonzero(left_depth_gt_np)]
     left_depth_gt_np_mean = np.mean(left_depth_gt_nonzero)
     left_depth_gt_np = left_depth_gt_np + left_depth_gt_np - left_depth_gt_np_mean
     left_depth_gt_np[(left_depth_gt_np < 0)] = 0
