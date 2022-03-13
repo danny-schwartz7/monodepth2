@@ -66,6 +66,27 @@ def mono_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
     MSEloss = torch.mean(torch.pow(pred_depth - gtDepth, 2))    #MSE
     return MSEloss
 
+def stereo_supervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
+    left_img = tup.imgL
+    right_img = tup.imgR
+    left_img = left_img.to(DEVICE)
+    right_img = right_img.to(DEVICE)
+
+    #concatonate
+    stereo_images = torch.cat((left_img, right_img), dim=1)
+
+    #forward
+    disp_maps = model.forward(stereo_images)
+    leftDisp = disp_maps[-1][0] #last left image
+    #ground truth
+    gtDepth = tup.depthL.to(DEVICE)
+    leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength)
+    #mask
+    pred_depth = leftDepth[gtDepth.nonzero(as_tuple=True)]
+    gtDepth = gtDepth[gtDepth.nonzero(as_tuple=True)]
+    MSEloss = torch.mean(torch.pow(pred_depth - gtDepth, 2))    #MSE
+    return MSEloss
+
 def train(train_loader: torch.utils.data.DataLoader,
             val_loader: torch.utils.data.DataLoader,
             model: nn.Module,
@@ -109,7 +130,10 @@ def train(train_loader: torch.utils.data.DataLoader,
                 
             
             #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
-            total_loss = mono_supervised_MSE_loss(tup, model)
+            
+            #total_loss = mono_supervised_MSE_loss(tup, model)
+            total_loss = stereo_supervised_MSE_loss(tup, model)
+            
             running_loss += examples_in_batch * total_loss.item()
                 # running_recon_loss += recon_loss.item()
                 # running_disp_smooth_loss += disp_smooth_loss.item()
@@ -149,8 +173,10 @@ def train(train_loader: torch.utils.data.DataLoader,
             model.eval()
             with torch.no_grad():
                 examples_in_batch = tup.imgL.shape[0]
-                total_loss = mono_supervised_MSE_loss(tup, model)
                 
+                #total_loss = mono_supervised_MSE_loss(tup, model)
+                total_loss = stereo_supervised_MSE_loss(tup, model)
+
                     #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
                 val_loss += examples_in_batch * total_loss.item()
 
