@@ -40,6 +40,8 @@ def calculateDisparityTest():
     stereo = cv.StereoBM_create(numDisparities=16, blockSize=15)
     disparity = stereo.compute(imgLGray.astype(np.uint8), imgRGray.astype(np.uint8))
 
+    disparity = disparity / disparity.max()
+
     return disparity
 
 def calculateDisparity(tup):
@@ -61,6 +63,8 @@ def calculateDisparity(tup):
     stereo = cv.StereoBM_create(numDisparities=num_disp, blockSize=15)
     disparity = stereo.compute(imgLGray.astype(np.uint8), imgRGray.astype(np.uint8))
 
+    disparity = disparity / disparity.max()
+
     return disparity
 
 def convertDisparityArrayToTensor(disparity) -> torch.tensor:
@@ -81,7 +85,7 @@ def data_tuple_to_plt_image(tup):
 
     fig = plt.figure(figsize=(21, 7))
 
-    rows = 3
+    rows = 2
     cols = 2
 
     fig.add_subplot(rows, cols, 1)
@@ -100,28 +104,28 @@ def data_tuple_to_plt_image(tup):
     plt.axis('off')
     plt.title("Left Ground-Truth Depth")
 
+    #fig.add_subplot(rows, cols, 3)
+    #plt.imshow(right_image_np)
+    #plt.axis('off')
+    #plt.title("Right Image")
+
+    #right_depth_gt_nonzero = right_depth_gt_np[right_depth_gt_np.nonzero(as_tuple=True)]
+    #right_depth_gt_np_mean = np.mean(right_depth_gt_nonzero)
+    #right_depth_gt_np = right_depth_gt_np + right_depth_gt_np - left_depth_gt_np_mean
+    #right_depth_gt_np[(right_depth_gt_np < 0)] = 0
+    #right_depth_gt_np[(right_depth_gt_np > 255)] = 255
+
+    #fig.add_subplot(rows, cols, 4)
+    #plt.imshow(right_depth_gt_np)  # TODO: use cmap?
+    #plt.axis('off')
+    #plt.title("Right Ground-Truth Depth")
+
     fig.add_subplot(rows, cols, 3)
-    plt.imshow(right_image_np)
-    plt.axis('off')
-    plt.title("Right Image")
-
-    right_depth_gt_nonzero = right_depth_gt_np[right_depth_gt_np.nonzero(as_tuple=True)]
-    right_depth_gt_np_mean = np.mean(right_depth_gt_nonzero)
-    right_depth_gt_np = right_depth_gt_np + right_depth_gt_np - left_depth_gt_np_mean
-    right_depth_gt_np[(right_depth_gt_np < 0)] = 0
-    right_depth_gt_np[(right_depth_gt_np > 255)] = 255
-
-    fig.add_subplot(rows, cols, 4)
-    plt.imshow(right_depth_gt_np)  # TODO: use cmap?
-    plt.axis('off')
-    plt.title("Right Ground-Truth Depth")
-
-    fig.add_subplot(rows, cols, 5)
     plt.imshow(disparity, vmin=0.0, vmax=0.3)
     plt.axis('off')
     plt.title("Predicted Disparity Map")
 
-    fig.add_subplot(rows, cols, 6)
+    fig.add_subplot(rows, cols, 4)
     plt.imshow(depth)  # TODO: use cmap?
     plt.axis('off')
     plt.title("Predicted Depth Map")
@@ -169,5 +173,5 @@ def mainTest():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    mainTest()
 
