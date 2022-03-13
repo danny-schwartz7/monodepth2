@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 from tqdm import tqdm
@@ -275,8 +276,8 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     right_image = right_image.to(DEVICE)
     stereo_images = torch.cat((left_image, right_image), dim = 1)
     with torch.no_grad():
-        #left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
-        left_to_right_disp, right_to_left_disp = model.forward(stereo_images)[-1]
+        left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
+        #left_to_right_disp, right_to_left_disp = model.forward(stereo_images)[-1]
         recons = reconstruct_input_from_disp_maps((left_image, right_image), (left_to_right_disp, right_to_left_disp))
 
     left_image_np = left_image.permute((0, 2, 3, 1))[0, :, :, :].cpu().detach().numpy()
@@ -293,6 +294,12 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.imshow(left_image_np)
     plt.axis('off')
     plt.title("Left Image")
+
+    left_depth_gt_nonzero = left_depth_gt_np[np.nonzero(left_depth_gt_np)]
+    left_depth_gt_np_mean = np.mean(left_depth_gt_nonzero)
+    left_depth_gt_np = left_depth_gt_np + left_depth_gt_np - left_depth_gt_np_mean
+    left_depth_gt_np[(left_depth_gt_np < 0)] = 0
+    left_depth_gt_np[(left_depth_gt_np > 255)] = 255
 
     fig.add_subplot(rows, cols, 2)
     plt.imshow(left_depth_gt_np)  # TODO: use cmap?
