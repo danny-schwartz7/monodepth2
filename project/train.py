@@ -16,7 +16,7 @@ def get_args():
     parser.add_argument('--initial-lr', type=float, default=1e-4)
     parser.add_argument('--num-epochs', type=int, default=2)
     parser.add_argument('--batch-size', type=int, default=4)
-    parser.add_argument('--supervised', type=bool, default=False)
+    parser.add_argument('--stereo', type=bool, default=False)
 
     return parser.parse_args()
 
@@ -42,7 +42,7 @@ def main():
     train(train_loader, val_loader, model,
           args.model_save_dir, args.tbx_log_dir,
           args.initial_lr, args.num_epochs, train_viz_tup=train_viz_tup,
-          val_viz_tup=val_viz_tup, supervised=args.supervised)
+          val_viz_tup=val_viz_tup, stereo=args.stereo)
 
 
 if __name__ == "__main__":

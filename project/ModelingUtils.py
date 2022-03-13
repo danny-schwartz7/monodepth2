@@ -95,7 +95,7 @@ def train(train_loader: torch.utils.data.DataLoader,
             tbx_log_dir: str,
             initial_lr: float = 1e-4,
             num_epochs: int = 2,
-            supervised: bool = False,
+            stereo: bool = False,
             train_viz_tup: Optional[Tuple] = None,
             val_viz_tup: Optional[Tuple] = None):
 
@@ -132,8 +132,10 @@ def train(train_loader: torch.utils.data.DataLoader,
             
             #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
             
-            #total_loss = mono_supervised_MSE_loss(tup, model)
-            total_loss = stereo_supervised_MSE_loss(tup, model)
+            if stereo:
+                total_loss = stereo_supervised_MSE_loss(tup, model)
+            else:
+                total_loss = mono_supervised_MSE_loss(tup, model)
             
             running_loss += examples_in_batch * total_loss.item()
                 # running_recon_loss += recon_loss.item()
@@ -175,8 +177,10 @@ def train(train_loader: torch.utils.data.DataLoader,
             with torch.no_grad():
                 examples_in_batch = tup.imgL.shape[0]
                 
-                #total_loss = mono_supervised_MSE_loss(tup, model)
-                total_loss = stereo_supervised_MSE_loss(tup, model)
+                if stereo:
+                    total_loss = stereo_supervised_MSE_loss(tup, model)
+                else:
+                    total_loss = mono_supervised_MSE_loss(tup, model)
 
                     #recon_loss, disp_smooth_loss, lr_consistency_loss, total_loss = unsupervised_multi_scale_loss(tup, model, True)
                 val_loss += examples_in_batch * total_loss.item()
