@@ -3,6 +3,7 @@ import os
 from torch.utils.data import DataLoader
 
 from unsupervised.EncDecNet import EncDecNet
+from unsupervised.stereoEncDecNet import StereoEncDecNet
 from project.ModelingUtils import train
 from dataset_interface import MyDataset, get_dataloader
 
@@ -31,7 +32,8 @@ def main():
     make_dir_if_not_exists(args.model_save_dir)
     make_dir_if_not_exists(args.tbx_log_dir)
 
-    model = EncDecNet()
+    #model = EncDecNet()
+    model = StereoEncDecNet()
 
     train_viz_tup = MyDataset("train")[0]
     val_viz_tup = MyDataset("eval")[0]
