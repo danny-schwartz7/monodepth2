@@ -28,7 +28,7 @@ def main():
 
     model = torch.load(f"{args.model_save_dir}/best.pt")
     test_loader = get_dataloader("test", batch_size=args.batch_size, shuffle=False)
-
+    print(args.skip_metrics)
     if args.skip_metrics is None:
         test(test_loader, model)
 
