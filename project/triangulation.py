@@ -117,7 +117,7 @@ def data_tuple_to_plt_image(tup):
     plt.title("Right Ground-Truth Depth")
 
     fig.add_subplot(rows, cols, 5)
-    plt.imshow(disparity)
+    plt.imshow(disparity, vmin=0.0, vmax=0.3)
     plt.axis('off')
     plt.title("Predicted Disparity Map")
 
