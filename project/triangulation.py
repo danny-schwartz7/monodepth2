@@ -169,6 +169,7 @@ def mainTest():
     start_time = time.time()
     disparity = calculateDisparityTest()
     print("--- %s seconds ---" % (time.time() - start_time))
+    print("Test")
     plt.imshow(disparity, 'gray')
     plt.show()
 
