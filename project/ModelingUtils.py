@@ -82,7 +82,7 @@ def unsupervised_multi_scale_loss(tup: Data_Tuple, model: nn.Module, return_indi
     right_img = right_img.to(DEVICE)
 
     stereo_pair = (left_img, right_img)
-    disp_maps = model.forward(left_img)
+    disp_maps = model.forward(left_img, right_img)
 
     return unsupervised_multiscale_monodepth_loss(stereo_pair, disp_maps, return_individual_losses=return_individual_losses)
 
@@ -143,13 +143,13 @@ def train(train_loader: torch.utils.data.DataLoader,
 
             train_tracker.ingest(unsup_loss_dict, examples_in_batch, examples_in_batch)
 
-            semisup_loss = mono_semisupervised_MSE_loss(tup, model)
+            # semisup_loss = mono_semisupervised_MSE_loss(tup, model)
+            #
+            # if semisup_loss != 0:
+            #     running_supervision_loss += semisup_loss.item()
+            #     num_supervision_batches += 1
 
-            if semisup_loss != 0:
-                running_supervision_loss += semisup_loss.item()
-                num_supervision_batches += 1
-
-            total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
+            # total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
 
             total_loss.backward()
             optimizer.step()
@@ -232,7 +232,7 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
             examples_in_batch = tup.imgL.shape[0]
             #test_loss += examples_in_batch * unsupervised_multi_scale_loss(tup, model).item()
 
-            out = model.forward(tup.imgL.to(DEVICE))
+            out = model.forward(tup.imgL.to(DEVICE), tup.imgR.to(DEVICE))
             disp_map = out[-1][0]
 
             for i in range(examples_in_batch):
@@ -274,7 +274,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     right_image = right_image.to(DEVICE)
 
     with torch.no_grad():
-        left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
+        left_to_right_disp, right_to_left_disp = model.forward(left_image, right_image.to(DEVICE))[-1]
 
         recons = reconstruct_input_from_disp_maps((left_image, right_image), (left_to_right_disp, right_to_left_disp))
 

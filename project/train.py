@@ -5,6 +5,7 @@ import torch
 from unsupervised.EncDecNet import EncDecNet
 from project.ModelingUtils import train
 from dataset_interface import MyDataset, get_dataloader
+from unsupervised.StereoEncDecNet import StereoEncDecNet
 
 
 def get_args():
@@ -39,9 +40,9 @@ def main():
             model = torch.load(model_load_path)
         else:
             print(f"WARNING: file '{model_load_path}' not found, using freshly initialized model weights")
-            model = EncDecNet()
+            model = StereoEncDecNet()
     else:
-        model = EncDecNet()
+        model = StereoEncDecNet()
 
     train_viz_tup = MyDataset("train")[0]
     val_viz_tup = MyDataset("eval")[0]

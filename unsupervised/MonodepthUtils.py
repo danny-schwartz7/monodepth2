@@ -113,11 +113,11 @@ def unsupervised_multiscale_monodepth_loss(
             (resized_left_image, resized_right_image),
             disparity_pair,
             recons,
-            disp_smoothness_weight=10 * 0.1/(2 ** (3-i)),
+            disp_smoothness_weight=0.1/(2 ** (3-i)),
             return_individual_losses=True
         )
-        # TODO: observe visual differences of just trying to minimize recon loss
-        total_loss += scale_rec_loss # + scale_disp_loss + scale_lr_loss
+
+        total_loss += scale_rec_loss + scale_disp_loss + scale_lr_loss
         scale_str = f"1/{2 ** (3 - i)}-scale"
         loss_dict[f"recon_loss_{scale_str}"] = scale_rec_loss
         loss_dict[f"disp_smoothness_loss_{scale_str}"] = scale_disp_loss
