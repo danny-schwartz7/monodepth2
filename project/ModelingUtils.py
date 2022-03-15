@@ -313,14 +313,13 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.axis('off')
     plt.title("Left Image")
 
-    left_depth_gt_nonzero = left_depth_gt_np[left_depth_gt_np.nonzero(as_tuple=True)]
-    left_depth_gt_np_mean = np.mean(left_depth_gt_nonzero)
-    left_depth_gt_np = left_depth_gt_np + left_depth_gt_np - left_depth_gt_np_mean
-    left_depth_gt_np[(left_depth_gt_np < 0)] = 0
-    left_depth_gt_np[(left_depth_gt_np > 255)] = 255
+    x, y = np.where(left_depth_gt_np > 0)
+    d = left_depth_gt_np[left_depth_gt_np != 0]
+    xyd = np.stack((y, x, d)).T
+    gt = left_depth_gt_np(left_depth_gt_np.shape, xyd)
 
     fig.add_subplot(rows, cols, 2)
-    plt.imshow(left_depth_gt_np)  # TODO: use cmap?
+    plt.imshow(gt)  # TODO: use cmap?
     plt.axis('off')
     plt.title("Left Ground-Truth Depth")
 
@@ -348,3 +347,13 @@ def convert_tuple_to_batched_if_necessary(tup):
     focal_len = focal_len.unsqueeze(dim=0)
     baseline = baseline.unsqueeze(dim=0)
     return (left_image, right_image, left_depth_gt, right_depth_gt, focal_len, baseline)
+
+def lin_interp(shape, xyd):
+    # taken from https://github.com/hunse/kitti
+    m, n = shape
+    ij, d = xyd[:, 1::-1], xyd[:, 2]
+    f = LinearNDInterpolator(ij, d, fill_value=0)
+    J, I = np.meshgrid(np.arange(n), np.arange(m))
+    IJ = np.vstack([I.flatten(), J.flatten()]).T
+    disparity = f(IJ).reshape(shape)
+    return disparity
