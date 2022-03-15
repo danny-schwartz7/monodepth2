@@ -225,8 +225,6 @@ def main():
                 running_silog = 0
                 n = 0
                 for tup in tqdm(loader):
-                    left_image, right_image, left_depth_gt, right_depth_gt, _, _ = tup
-                    print(left_image.shape)
                     disp_cv = torch.tensor(calculateDisparity(tup))
                     running_mse += calculate_quantitative_results_RMS(disp_cv, tup) ** 2
                     running_silog += calculate_quantitaive_results_SILog(disp_cv, tup)
