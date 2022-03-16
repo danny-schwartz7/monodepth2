@@ -48,20 +48,22 @@ def calculate_quantitative_results_RMS(calculated_disparity_map: torch.Tensor, t
     RMSE = np.sqrt(np.mean((diff) ** 2))
     return RMSE
 
-def calculate_RMS_disparity(calculated_disparity_map: torch.Tensor, tup: Tuple):
+def calculate_RMS_stereoBM(calculated_disparity_map: torch.Tensor, tup: Tuple):
     imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
+    ground_truth_depth = depth_gtL.cpu().detach().numpy()
+    disp_predictions = calculated_disparity_map.cpu().detach().numpy()
+
+    keep_mask = np.where(ground_truth_depth != 0, np.ones_like(ground_truth_depth), np.zeros_like(ground_truth_depth))
+    keep_mask *= np.where(disp_predictions > 1e-8, np.ones_like(disp_predictions), np.zeros_like(disp_predictions))
+
     calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
     calculated_depth = calculated_depth.cpu().detach().numpy()
-    calculated_depth = np.abs(calculated_depth)
-    ground_truth_depth = depth_gtL.cpu().detach().numpy()
 
-    gt_depth_flat = ground_truth_depth.flatten()
-    calc_depth_flat = calculated_depth.flatten()
+    diff = calculated_depth - ground_truth_depth
+    squared = np.power(diff,2)
+    squared *= keep_mask
 
-    diff = calc_depth_flat - gt_depth_flat
-    diff = diff[(gt_depth_flat <= 100) & (gt_depth_flat >= 0.05)]
-
-    RMSE = np.sqrt(np.mean((diff) ** 2))
+    RMSE = np.sqrt(np.sum(squared) / np.sum(keep_mask))
     return RMSE
 
 def get_RMS_total(all_pairs_of_calcualted_disparity_maps_and_ground_truths):
@@ -74,7 +76,26 @@ def get_RMS_total(all_pairs_of_calcualted_disparity_maps_and_ground_truths):
         n = n + 1
     return totalRMSE / n
 
+def calculate_SILog_stereoBM(calculated_disparity_map: torch.Tensor, tup: Tuple):
+    imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
+    ground_truth_depth = depth_gtL.cpu().detach().numpy()
+    disp_predictions = calculated_disparity_map.cpu().detach().numpy()
 
+    epsilon = 1e-8
+
+    keep_mask = np.where(ground_truth_depth != 0, np.ones_like(ground_truth_depth), np.zeros_like(ground_truth_depth))
+    keep_mask *= np.where(disp_predictions > 1e-8, np.ones_like(disp_predictions), np.zeros_like(disp_predictions))
+
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
+    calculated_depth = calculated_depth.cpu().detach().numpy()
+
+    di = np.log(calculated_depth + epsilon) - np.log(calculated_depth + epsilon)
+    di *= keep_mask
+    diSquared = di ** 2
+    firstTerm = np.sum(diSquared) / np.sum(keep_mask)
+    secondTerm = (np.sum(di) / np.sum(keep_mask)) ** 2
+    SILog = firstTerm - secondTerm
+    return SILog
 
 
 

@@ -337,7 +337,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.imshow(left_depth_calc)
     #plt.imshow(left_disp_np, vmin=0.0, vmax=0.3)  # TODO: use cmap?
     plt.axis('off')
-    plt.title("Predicted Disparity Map")
+    plt.title("Predicted Depth Map")
 
     return fig
 

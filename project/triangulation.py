@@ -12,7 +12,7 @@ from scipy.interpolate import griddata, LinearNDInterpolator
 from tqdm import tqdm
 
 
-from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
+from project.evaluation import calculate_RMS_stereoBM, calculate_quantitaive_results_SILog
 
 from dataset_interface import MyDataset
 
@@ -83,16 +83,17 @@ def calculateDisparityTest():
     print("Min disparity is ", disparity.min())
 
     depth = dataset_interface.to_depth(torch.tensor(disparity), baseline[0], focal_length[0]).cpu().detach().numpy()
+    depth[disparity < 1e-6] = 0
     print("Depth size is ", depth.shape)
 
     fig.add_subplot(rows, cols, 2)
-    plt.imshow(disparity)
+    plt.imshow(right_image_to_plot)
     plt.axis('off')
     plt.set_cmap('plasma')
-    plt.title("Predicted Disparity")
+    plt.title("Right Image")
 
     fig.add_subplot(rows, cols, 4)
-    plt.imshow(depth)
+    plt.imshow(depth, vmin=0, vmax=200)
     plt.axis('off')
     plt.set_cmap('plasma')
     plt.title("Predicted Depth")
@@ -100,8 +101,6 @@ def calculateDisparityTest():
     print(one_ground_truth_depth.shape)
 
     depth_np = one_ground_truth_depth.cpu().detach().numpy()
-
-
 
     x, y = np.where(depth_np > 0)
     d = depth_np[depth_np != 0]
@@ -139,9 +138,6 @@ def calculateDisparity(tup):
     disparity[disparity < 0] = 0
 
     return disparity
-
-def convertDisparityArrayToTensor(disparity) -> torch.tensor:
-    return torch.tensor(disparity)
 
 
 def data_tuple_to_plt_image(tup):
@@ -199,7 +195,7 @@ def data_tuple_to_plt_image(tup):
     plt.title("Predicted Disparity Map")
 
     fig.add_subplot(rows, cols, 4)
-    plt.imshow(depth)  # TODO: use cmap?
+    plt.imshow(depth, vmin=0.0, vmax=1000)  # TODO: use cmap?
     plt.axis('off')
     plt.title("Predicted Depth Map")
 
@@ -232,7 +228,7 @@ def main():
                 n = 0
                 for tup in tqdm(loader):
                     disp_cv = torch.tensor(calculateDisparity(tup))
-                    running_mse += calculate_quantitative_results_RMS(disp_cv, tup) ** 2
+                    running_mse += calculate_RMS_stereoBM(disp_cv, tup) ** 2
                     running_silog += calculate_quantitaive_results_SILog(disp_cv, tup)
                     n = n + 1
                 print("MSE average is ", running_mse / n)
