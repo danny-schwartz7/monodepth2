@@ -350,8 +350,8 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     right_image = right_image.to(DEVICE)
     stereo_images = torch.cat((left_image, right_image), dim = 1)
     with torch.no_grad():
-        left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
-        #left_to_right_disp, right_to_left_disp = model.forward(stereo_images)[-1]
+        #left_to_right_disp, right_to_left_disp = model.forward(left_image)[-1]
+        left_to_right_disp, right_to_left_disp = model.forward(stereo_images)[-1]
         recons = reconstruct_input_from_disp_maps((left_image, right_image), (left_to_right_disp, right_to_left_disp))
 
     left_image_np = left_image.permute((0, 2, 3, 1))[0, :, :, :].cpu().detach().numpy()
