@@ -318,7 +318,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     x, y = np.where(left_depth_gt_np > 0)
     d = left_depth_gt_np[left_depth_gt_np != 0]
     xyd = np.stack((y, x, d)).T
-    gt = left_depth_gt_np(left_depth_gt_np.shape, xyd)
+    gt = lin_interp(left_depth_gt_np.shape, xyd)
 
     fig.add_subplot(rows, cols, 2)
     plt.imshow(gt)  # TODO: use cmap?
