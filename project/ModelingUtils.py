@@ -5,6 +5,8 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from matplotlib import pyplot as plt
 from typing import Optional, Tuple
+from scipy.interpolate import griddata, LinearNDInterpolator
+
 
 from project.evaluation import calculate_quantitative_results_RMS, calculate_quantitaive_results_SILog
 import dataset_interface

@@ -112,7 +112,7 @@ def calculateDisparityTest():
     return disparity
 
 def calculateDisparity(tup):
-    imgL, imgR, depth_gtL, focal_length, baseline = tup.imgL, tup.imgR, tup.depthL, tup.focalLength, tup.baseline
+    imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
     imgL = imgL.cpu().detach().numpy()
     imgR = imgR.cpu().detach().numpy()
     depth_gtL = depth_gtL.cpu().detach().numpy()

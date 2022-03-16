@@ -43,7 +43,23 @@ def calculate_quantitative_results_RMS(calculated_disparity_map: torch.Tensor, t
     calc_depth_flat = calculated_depth.flatten()
 
     diff = calc_depth_flat - gt_depth_flat
-    diff = diff[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+    diff = diff[(gt_depth_flat <= 100) & (gt_depth_flat >= 0.05)]
+
+    RMSE = np.sqrt(np.mean((diff) ** 2))
+    return RMSE
+
+def calculate_RMS_disparity(calculated_disparity_map: torch.Tensor, tup: Tuple):
+    imgL, imgR, depth_gtL, depth_gtR, focal_length, baseline = tup
+    calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
+    calculated_depth = calculated_depth.cpu().detach().numpy()
+    calculated_depth = np.abs(calculated_depth)
+    ground_truth_depth = depth_gtL.cpu().detach().numpy()
+
+    gt_depth_flat = ground_truth_depth.flatten()
+    calc_depth_flat = calculated_depth.flatten()
+
+    diff = calc_depth_flat - gt_depth_flat
+    diff = diff[(gt_depth_flat <= 100) & (gt_depth_flat >= 0.05)]
 
     RMSE = np.sqrt(np.mean((diff) ** 2))
     return RMSE
