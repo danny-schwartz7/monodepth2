@@ -290,7 +290,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     model.eval()
 
     tup = convert_tuple_to_batched_if_necessary(tup)
-    left_image, right_image, left_depth_gt, right_depth_gt, _, _ = tup
+    left_image, right_image, left_depth_gt, right_depth_gt, focal_length, baseline = tup
     left_image = left_image.to(DEVICE)
     right_image = right_image.to(DEVICE)
     stereo_images = torch.cat((left_image,right_image),dim=1)
@@ -322,6 +322,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
 
     fig.add_subplot(rows, cols, 2)
     plt.imshow(gt)  # TODO: use cmap?
+    plt.set_cmap('plasma')
     plt.axis('off')
     plt.title("Left Ground-Truth Depth")
 
@@ -330,8 +331,11 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.axis('off')
     plt.title("Reconstructed Left Image")
 
+    left_depth_calc = dataset_interface.to_depth(left_to_right_disp[0, :, :], baseline, focal_length)
+
     fig.add_subplot(rows, cols, 4)
-    plt.imshow(left_disp_np, vmin=0.0, vmax=0.3)  # TODO: use cmap?
+    plt.imshow(left_depth_calc)
+    #plt.imshow(left_disp_np, vmin=0.0, vmax=0.3)  # TODO: use cmap?
     plt.axis('off')
     plt.title("Predicted Disparity Map")
 

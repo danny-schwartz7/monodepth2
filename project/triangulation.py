@@ -44,9 +44,9 @@ def calculateDisparityTest():
 
     tup = data_tup_batch
     imgL, imgR, depth_gtL, focal_length, baseline = tup.imgL, tup.imgR, tup.depthL, tup.focalLength, tup.baseline
-    imgL = imgL[1, :, :, :].cpu().detach().numpy()  # Good numbers 1, 2?, 3, 6
-    imgR = imgR[1, :, :, :].cpu().detach().numpy()
-    one_ground_truth_depth = depth_gtL[1, :, :]
+    imgL = imgL[3, :, :, :].cpu().detach().numpy()  # Good numbers 1, 2?, 3, 6
+    imgR = imgR[3, :, :, :].cpu().detach().numpy()
+    one_ground_truth_depth = depth_gtL[3, :, :]
 
     left_image_to_plot = np.transpose(imgL,(1, 2, 0))
     right_image_to_plot = np.transpose(imgR,(1, 2, 0))
@@ -76,26 +76,32 @@ def calculateDisparityTest():
     plt.axis('off')
     plt.title("Left Image")
 
-    fig.add_subplot(rows, cols, 2)
-    plt.imshow(right_image_to_plot)
-    plt.axis('off')
-    plt.title("Right Image")
-
-    fig.add_subplot(rows, cols, 4)
-    plt.imshow(disparity)
-    plt.axis('off')
-    plt.set_cmap('plasma')
-    plt.title("Disparity")
-
     disparity = (disparity / imgLGray.shape[1] / 16)
-    disparity[disparity < 0] = 0
+    disparity[disparity < 0] = 1e-8
 
     print("Max disparity is ", disparity.max())
     print("Min disparity is ", disparity.min())
 
+    depth = dataset_interface.to_depth(torch.tensor(disparity), baseline[0], focal_length[0]).cpu().detach().numpy()
+    print("Depth size is ", depth.shape)
+
+    fig.add_subplot(rows, cols, 2)
+    plt.imshow(disparity)
+    plt.axis('off')
+    plt.set_cmap('plasma')
+    plt.title("Predicted Disparity")
+
+    fig.add_subplot(rows, cols, 4)
+    plt.imshow(depth)
+    plt.axis('off')
+    plt.set_cmap('plasma')
+    plt.title("Predicted Depth")
+
     print(one_ground_truth_depth.shape)
 
     depth_np = one_ground_truth_depth.cpu().detach().numpy()
+
+
 
     x, y = np.where(depth_np > 0)
     d = depth_np[depth_np != 0]
