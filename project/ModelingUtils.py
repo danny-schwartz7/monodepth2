@@ -265,7 +265,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     plt.axis('off')
     plt.title("Reconstructed Left Image")
 
-    left_depth_calc = dataset_interface.to_depth(left_to_right_disp[0, :, :], baseline, focal_length)
+    left_depth_calc = dataset_interface.to_depth(left_to_right_disp[0, :, :], baseline, focal_length).cpu().detach().numpy()[0,:,:]
 
     fig.add_subplot(rows, cols, 4)
     plt.imshow(left_depth_calc)
