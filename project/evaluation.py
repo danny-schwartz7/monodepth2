@@ -89,7 +89,7 @@ def calculate_SILog_stereoBM(calculated_disparity_map: torch.Tensor, tup: Tuple)
     calculated_depth = dataset_interface.to_depth(calculated_disparity_map, baseline, focal_length)
     calculated_depth = calculated_depth.cpu().detach().numpy()
 
-    di = np.log(calculated_depth + epsilon) - np.log(calculated_depth + epsilon)
+    di = np.log(calculated_depth + epsilon) - np.log(ground_truth_depth + epsilon)
     di *= keep_mask
     diSquared = di ** 2
     firstTerm = np.sum(diSquared) / np.sum(keep_mask)

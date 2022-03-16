@@ -12,7 +12,7 @@ from scipy.interpolate import griddata, LinearNDInterpolator
 from tqdm import tqdm
 
 
-from project.evaluation import calculate_RMS_stereoBM, calculate_quantitaive_results_SILog
+from project.evaluation import calculate_RMS_stereoBM, calculate_SILog_stereoBM
 
 from dataset_interface import MyDataset
 
@@ -229,7 +229,7 @@ def main():
                 for tup in tqdm(loader):
                     disp_cv = torch.tensor(calculateDisparity(tup))
                     running_mse += calculate_RMS_stereoBM(disp_cv, tup) ** 2
-                    running_silog += calculate_quantitaive_results_SILog(disp_cv, tup)
+                    running_silog += calculate_SILog_stereoBM(disp_cv, tup)
                     n = n + 1
                 print("MSE average is ", running_mse / n)
                 print("SILog average is ", running_silog / n)
