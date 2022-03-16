@@ -245,7 +245,16 @@ def test(test_loader: torch.utils.data.DataLoader, model: nn.Module):
             examples_in_batch = tup.imgL.shape[0]
             #test_loss += examples_in_batch * unsupervised_multi_scale_loss(tup, model).item()
 
-            out = model.forward(tup.imgL.to(DEVICE))
+
+
+            #stereo concat
+            left_img = tup.imgL.to(DEVICE)
+            right_img = tup.imgR.to(DEVICE)
+            stereo_images = torch.cat((left_img, right_img), dim=1)
+
+            #stereo 
+            out = model.forward(stereo_images)
+            #out = model.forward(tup.imgL.to(DEVICE))
             disp_map = out[-1][0]
 
             for i in range(examples_in_batch):
