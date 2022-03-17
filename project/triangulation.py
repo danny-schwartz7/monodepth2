@@ -44,9 +44,9 @@ def calculateDisparityTest():
 
     tup = data_tup_batch
     imgL, imgR, depth_gtL, focal_length, baseline = tup.imgL, tup.imgR, tup.depthL, tup.focalLength, tup.baseline
-    imgL = imgL[3, :, :, :].cpu().detach().numpy()  # Good numbers 1, 2?, 3, 6
-    imgR = imgR[3, :, :, :].cpu().detach().numpy()
-    one_ground_truth_depth = depth_gtL[3, :, :]
+    imgL = imgL[13, :, :, :].cpu().detach().numpy()  # Good numbers 1, 2?, 3, 6
+    imgR = imgR[13, :, :, :].cpu().detach().numpy()
+    one_ground_truth_depth = depth_gtL[13, :, :]
 
     left_image_to_plot = np.transpose(imgL,(1, 2, 0))
     right_image_to_plot = np.transpose(imgR,(1, 2, 0))
@@ -195,7 +195,7 @@ def data_tuple_to_plt_image(tup):
     plt.title("Predicted Disparity Map")
 
     fig.add_subplot(rows, cols, 4)
-    plt.imshow(depth, vmin=0.0, vmax=1000)  # TODO: use cmap?
+    plt.imshow(depth)#, vmin=0.0, vmax=1000)  # TODO: use cmap?
     plt.axis('off')
     plt.title("Predicted Depth Map")
 
@@ -263,9 +263,9 @@ def use_pickle_files():
     tup = data_tup_batch
     imgL, imgR, depth_gtL, focal_length, baseline = tup.imgL, tup.imgR, tup.depthL, tup.focalLength, tup.baseline
 
-    left_image_np = imgL.permute((0, 2, 3, 1))[0, :, :, :].cpu().detach().numpy() #Good numbers 1, 2?, 3, 6
+    left_image_np = imgL.permute((0, 2, 3, 1))[6, :, :, :].cpu().detach().numpy() #Good numbers 1, 2?, 3, 6, 14
 
-    one_ground_truth_depth = depth_gtL[0,:,:]
+    one_ground_truth_depth = depth_gtL[6,:,:]
     print(one_ground_truth_depth.shape)
 
     fig = plt.figure(figsize=(21, 7))
