@@ -43,7 +43,7 @@ def calculate_quantitative_results_RMS(calculated_disparity_map: torch.Tensor, t
     calc_depth_flat = calculated_depth.flatten()
 
     diff = calc_depth_flat - gt_depth_flat
-    diff = diff[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+    diff = diff[(gt_depth_flat <= 20) & (gt_depth_flat >= 0.05)]
 
     RMSE = np.sqrt(np.mean((diff) ** 2))
     return RMSE
@@ -74,8 +74,8 @@ def calculate_quantitaive_results_SILog(calculated_disparity_map: torch.Tensor, 
     gt_depth_flat = ground_truth_depth.flatten()
     calc_depth_flat = calculated_depth.flatten()
 
-    calc_depth_flat = calc_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
-    gt_depth_flat = gt_depth_flat[(gt_depth_flat <= 10) & (gt_depth_flat >= 0.05)]
+    calc_depth_flat = calc_depth_flat[(gt_depth_flat <= 20) & (gt_depth_flat >= 0.05)]
+    gt_depth_flat = gt_depth_flat[(gt_depth_flat <= 20) & (gt_depth_flat >= 0.05)]
 
     di = np.log(calc_depth_flat + epsilon) - np.log(gt_depth_flat + epsilon)
     diSquared = di ** 2

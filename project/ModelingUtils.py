@@ -48,6 +48,56 @@ def mono_semisupervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
     mse_loss = torch.sum(mse_batched)/torch.sum(supervision_mask)
     return mse_loss
 
+def stereo_semisupervised_MSE_loss(tup: Data_Tuple, model: nn.Module):
+    # only use loss for examples where focal_length == 0.7705, else loss component is 0
+
+    left_img = tup.imgL
+    left_img = left_img.to(DEVICE)
+    right_img = tup.imgR
+    right_img = right_img.to(DEVICE)
+    disp_maps = model.forward(left_img, right_img)
+    leftDisp = disp_maps[-1][0]
+    rightDisp = disp_maps[-1][1]
+
+    gtDepth = tup.depthL.to(DEVICE)
+    leftDepth = dataset_interface.to_depth(leftDisp, tup.baseline, tup.focalLength).to(DEVICE)
+
+    se_batched = torch.pow(leftDepth - gtDepth, 2)
+
+    depth_mask = torch.where(gtDepth != 0, torch.ones_like(gtDepth).to(DEVICE), torch.zeros_like(gtDepth).to(DEVICE)).to(DEVICE)
+    se_batched = se_batched * depth_mask
+    mse_batched = torch.sum(se_batched, dim=(1, 2))/torch.sum(depth_mask, dim=(1, 2))
+
+    supervision_mask = torch.where(tup.focalLength.reshape((-1,)).to(DEVICE) == SEPT_28_FOCAL_LEN,
+                                   torch.ones_like(mse_batched).to(DEVICE), torch.zeros_like(mse_batched).to(DEVICE)).to(DEVICE)
+    mse_batched = mse_batched * supervision_mask
+
+    if torch.sum(supervision_mask) == 0:
+        # avoid dividing by 0
+        mse_loss = torch.sum(supervision_mask)
+    else:
+        mse_loss = torch.sum(mse_batched)/torch.sum(supervision_mask)
+
+    gtDepth = tup.depthR.to(DEVICE)
+    rightDepth = dataset_interface.to_depth(rightDisp, tup.baseline, tup.focalLength).to(DEVICE)
+
+    se_batched = torch.pow(rightDepth - gtDepth, 2)
+
+    depth_mask = torch.where(gtDepth != 0, torch.ones_like(gtDepth).to(DEVICE),
+                             torch.zeros_like(gtDepth).to(DEVICE)).to(DEVICE)
+    se_batched = se_batched * depth_mask
+    mse_batched = torch.sum(se_batched, dim=(1, 2)) / torch.sum(depth_mask, dim=(1, 2))
+
+    mse_batched = mse_batched * supervision_mask
+
+    if torch.sum(supervision_mask) == 0:
+        # avoid dividing by 0
+        mse_loss += torch.sum(supervision_mask)
+    else:
+        mse_loss += torch.sum(mse_batched)/torch.sum(supervision_mask)
+
+    return mse_loss/2
+
 
 def unsupervised_single_scale_loss(tup: Data_Tuple, model: nn.Module, return_individual_losses: bool = False):
     """
@@ -143,13 +193,13 @@ def train(train_loader: torch.utils.data.DataLoader,
 
             train_tracker.ingest(unsup_loss_dict, examples_in_batch, examples_in_batch)
 
-            # semisup_loss = mono_semisupervised_MSE_loss(tup, model)
-            #
-            # if semisup_loss != 0:
-            #     running_supervision_loss += semisup_loss.item()
-            #     num_supervision_batches += 1
+            semisup_loss = stereo_semisupervised_MSE_loss(tup, model)
 
-            # total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
+            if semisup_loss != 0:
+                running_supervision_loss += semisup_loss.item()
+                num_supervision_batches += 1
+
+            total_loss += SUPERVISED_LOSS_WEIGHT * semisup_loss
 
             total_loss.backward()
             optimizer.step()
@@ -299,7 +349,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     gt = lin_interp(left_depth_gt_np.shape, xyd)
 
     fig.add_subplot(rows, cols, 2)
-    plt.imshow(gt)  # TODO: use cmap?
+    plt.imshow(gt, vmin=0.0, vmax=20.0)  # TODO: use cmap?
     plt.axis('off')
     plt.set_cmap('plasma')
     plt.title("Left Ground-Truth Depth")
@@ -312,7 +362,7 @@ def data_tuple_to_plt_image(tup, model: nn.Module):
     left_depth_calc = dataset_interface.to_depth(left_to_right_disp[0, :, :], baseline, focal_length).cpu().detach().numpy()[0,:,:]
 
     fig.add_subplot(rows, cols, 4)
-    plt.imshow(left_depth_calc)
+    plt.imshow(left_depth_calc, vmin=0.0, vmax=20.0)
     #plt.imshow(left_disp_np, vmin=0.0, vmax=0.3)  # TODO: use cmap?
     plt.axis('off')
     plt.set_cmap('plasma')
